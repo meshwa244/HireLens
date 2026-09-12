@@ -1,0 +1,187 @@
+{
+  "app_name": "HIRELENS",
+  "personality": "7 Dark-First Utility DARK with Editorial Structure",
+  "personality_one_liner": "Recruiter-side AI talent intelligence command center combining rigorous deterministic matching with grounded evidence scoring in an obsidian and signal-green workspace.",
+  "color": {
+    "surface": "#121316",
+    "onSurface": "#F3F4F6",
+    "surfaceSecondary": "#1A1C23",
+    "onSurfaceSecondary": "#E5E7EB",
+    "surfaceTertiary": "#252833",
+    "onSurfaceTertiary": "#9CA3AF",
+    "surfaceInverse": "#FFFFFF",
+    "onSurfaceInverse": "#121316",
+    "brand": "#00E599",
+    "brandPrimary": "#00E599",
+    "onBrandPrimary": "#121316",
+    "brandSecondary": "#00B377",
+    "onBrandSecondary": "#FFFFFF",
+    "brandTertiary": "#1C3829",
+    "onBrandTertiary": "#6EE7B7",
+    "success": "#10B981",
+    "onSuccess": "#FFFFFF",
+    "warning": "#F59E0B",
+    "onWarning": "#FFFFFF",
+    "error": "#EF4444",
+    "onError": "#FFFFFF",
+    "info": "#3B82F6",
+    "onInfo": "#FFFFFF",
+    "border": "#2E323F",
+    "borderStrong": "#4B5563",
+    "divider": "#1F232D",
+    "muted": "#9CA3AF"
+  },
+  "typography": {
+    "displayFontFamily": "Barlow Condensed",
+    "textFontFamily": "IBM Plex Sans",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Generous vertical breathing rhythm with compact data-dense cards and strict 8pt grid alignment.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 6,
+    "md": 12,
+    "lg": 20,
+    "pill": 999
+  },
+  "shadow_tier": "0",
+  "navigation": "bottom_tabs",
+  "icon_set": "MaterialCommunityIcons",
+  "glassmorphism": {
+    "enabled": true,
+    "do's": [
+      "Use frosted glass header bar and sticky bottom action containers over scrolling talent lists",
+      "Apply translucent tint over dark architectural backdrop for hero summaries"
+    ],
+    "dont's": [
+      "Do not blur dense candidate detail tables or requirement matrix data",
+      "Do not use glass on form inputs"
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-glass-effect",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "Auth / Demo Entry",
+      "purpose": "Secure authentication with Emergent Google auth and immediate 1-tap recruiter demo access.",
+      "states": {
+        "loading": "Authenticating session...",
+        "empty": "No active session found.",
+        "error": "Authentication failed. Retry."
+      },
+      "layout": "Immersive dark architectural backdrop with glass login card, demo instant access button, and Google Auth integration."
+    },
+    {
+      "name": "Overview",
+      "purpose": "Recruiter intelligence command center displaying active job pipelines, recent candidate screenings, and system health.",
+      "states": {
+        "loading": "Loading active recruitment pipelines...",
+        "empty": "No jobs or pipelines created yet. Create your first job JD.",
+        "error": "Failed to sync recruitment telemetry. Tap to retry."
+      },
+      "layout": "Scrollable vertical dashboard with top metrics summary, active priority job card, recent top matches, and quick screening upload trigger."
+    },
+    {
+      "name": "Jobs",
+      "purpose": "Manage open JDs, trigger JD extraction with LLM, and upload candidate resume batches.",
+      "states": {
+        "loading": "Parsing job descriptions and candidate pools...",
+        "empty": "No open job descriptions found. Upload a JD to begin smart ranking.",
+        "error": "Failed to retrieve job listings. Retry."
+      },
+      "layout": "Tabbed or searchable list of roles with department badges, candidate counts, deterministic weight toggles, and new JD creation flow."
+    },
+    {
+      "name": "Rankings",
+      "purpose": "Explore the 18-candidate seeded dataset ranked via hybrid keyword + semantic + evidence scoring with top-three highlighting.",
+      "states": {
+        "loading": "Running hybrid vector and keyword matching engines...",
+        "empty": "No candidates scored for this role yet. Upload resumes to populate ranking.",
+        "error": "Scoring engine timeout. Tap to refresh."
+      },
+      "layout": "Filtered candidate rank list with top-3 podium badges, score breakdown bars, evidence confidence chips, and compare triggers."
+    },
+    {
+      "name": "Candidate Detail",
+      "purpose": "Deep inspect candidate match evidence, claimed-vs-demonstrated skills, and requirements matrix.",
+      "states": {
+        "loading": "Extracting candidate telemetry and evidence snippets...",
+        "empty": "Candidate record not found.",
+        "error": "Failed to load candidate verification file. Retry."
+      },
+      "layout": "Stacked sheet with candidate header score, radar/progress metrics, requirement verification matrix, and grounded AI interview prompts."
+    },
+    {
+      "name": "Compare",
+      "purpose": "Side-by-side comparative analysis of selected candidates across critical job requirements and evidence scores.",
+      "states": {
+        "loading": "Assembling comparative evaluation matrices...",
+        "empty": "Select at least two candidates to compare side by side.",
+        "error": "Comparison generation failed. Retry."
+      },
+      "layout": "Scrollable side-by-side comparison columns highlighting score deltas, skill overlap, and AI recommendation rationale."
+    },
+    {
+      "name": "Recruiter AI",
+      "purpose": "Grounded AI assistant answering recruiter queries against indexed resume evidence and job requirements.",
+      "states": {
+        "loading": "Querying indexed candidate evidence base...",
+        "empty": "Ask anything about your candidate pool, e.g., 'Who has direct Kafka experience?'",
+        "error": "AI service unavailable. Tap to retry."
+      },
+      "layout": "Chat interface with grounded citation cards, suggested prompt pills, and secure evidence-backed response streams."
+    },
+    {
+      "name": "JD Insights & Technical View",
+      "purpose": "Inspect JD skill weight breakdown, deterministic scoring algorithm telemetry, and future student intelligence architecture beta.",
+      "states": {
+        "loading": "Calculating matching algorithm weights and telemetry...",
+        "empty": "No pipeline metrics available.",
+        "error": "Failed to load technical view."
+      },
+      "layout": "Modular technical telemetry display with hybrid weight sliders, score distribution chart, and beta student intelligence toggle."
+    },
+    {
+      "name": "Settings",
+      "purpose": "Configure recruiter profile, LLM extraction keys, deterministic weight defaults, and team permissions.",
+      "states": {
+        "loading": "Loading settings...",
+        "empty": "No settings configured.",
+        "error": "Failed to save settings."
+      },
+      "layout": "Clean settings list with account info, API integrations, haptic feedback toggles, and data export options."
+    }
+  ],
+  "images": {
+    "hero_backdrop": {
+      "url": "https://images.unsplash.com/photo-1738844153732-a485f0e78382?q=80&w=1000&auto=format&fit=crop",
+      "dark": "https://images.unsplash.com/photo-1738844153732-a485f0e78382?q=80&w=1000&auto=format&fit=crop",
+      "alt": "Dark architectural minimalist abstract backdrop"
+    }
+  },
+  "instructions_to_main_agent": "Ensure the app fully implements the recruiter-side Smart Shortlisting Engine with 18 seeded candidates, hybrid keyword + semantic matching, evidence-weighted breakdown, compare mode, grounded recruiter AI, and real/demo authentication. Follow all spacing, token, and dark-first utility guidelines. No emojis in system UI."
+}

@@ -1,0 +1,42 @@
+{
+  "summary": "Full end-to-end test of HireLens (Expo web preview + FastAPI + MongoDB). Backend: 20/20 pytest tests pass against the public URL (health, demo login, signup/login, overview metrics=1 job/18 candidates, rankings sorted desc with expected top-3 Maya Chen 74.2 / Leo Martin 67.97 / Arjun Mehta 66.85, score decomposition integrity, run-twice determinism identical, candidate detail, technical analysis 8 stages + 35/35/20/10 weights, insights, recruiter-ai grounded answers, jobs CRUD, 400/401/404 error handling). Frontend: all requested flows verified via Playwright on mobile viewport — demo login, 4 tabs with green active highlight, overview metrics, analyze->rankings (top-3 podium + 18 rows), candidate detail (score circle, 4 breakdown bars, penalty, evidence, claimed-vs-demonstrated, 10 match rows, critical gaps card on rank-18 candidate), compare screen with working A/B chips + LLM-grounded explanation card, technical view (8-stage pipeline, weight rows, 4 telemetry cards), insights (2 cards + student module card), Recruiter AI (suggestion chips + chat input/send both return grounded answer cards — LLM responded live), sign out via avatar returns to auth and session is cleared (persists after reload). Fixed one testID bug in compare.tsx (B-row chips had A-row testIDs because 'CANDIDATE B'.includes('A') is true). No deprecated Expo packages found.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "ALL (current_user dependency)", "issue": "Any missing/invalid/expired Authorization header silently falls back to the demo user (server.py:74-85) — endpoints are effectively unauthenticated. Acceptable for a demo build but must not ship to production."},
+      {"endpoint": "POST /api/jobs", "issue": "No DELETE /api/jobs endpoint; test-created jobs can only be removed directly from MongoDB."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "CompareScreen ChipRow", "issue": "FIXED by testing agent: B-row chips rendered testID 'compare-chip-a-*' because label.includes('A') matches 'CANDIDATE B'. Added explicit side prop.", "testID": "compare-chip-b-*", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Active job selection", "issue": "useActiveJob() picks jobs[0] (newest by created_at). Any newly created job hijacks the entire pipeline (Overview/Jobs/Rankings/AI/Compare all switch to the new job with 0 candidates). Discovered when a backend test-created job made Rankings show '0 candidates'. Not a bug for the single-demo-job scope but fragile.", "affected_testIDs": ["overview-job-card", "rankings-screen", "top-three-grid"]}
+    ],
+    "design_issues": [
+      {"screen": "(tabs)", "issues": ["Tab bar labels are 10px — below ideal 11-12px minimum for readability, though contrast and 64px bar height are fine"]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_hirelens_api.py", "/app/backend/tests/conftest.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Consider pinning the active pipeline to the demo job (or explicit job selection) instead of 'newest job wins' in useActiveJob",
+    "Remove the silent demo-user fallback in current_user before any non-demo release",
+    "Add DELETE /api/jobs (or a test-cleanup endpoint) to allow cleanup without direct DB access",
+    "Optional: bump tab label fontSize from 10 to 11"
+  ],
+  "critical_code_review_comments": [
+    "server.py current_user silently degrades to demo user on any auth failure — masks real auth bugs (security note)",
+    "ranking_engine weights and score decomposition verified: components sum minus critical_penalty == final_score (asserted in tests)",
+    "Frontend correctly uses EXPO_PUBLIC_BACKEND_URL from .env, StyleSheet.create throughout, Text wrapping correct, testIDs on all interactive elements",
+    "No deprecated Expo packages (expo-av / expo-barcode-scanner / expo-background-fetch absent); safe-area handled via useSafeAreaInsets"
+  ],
+  "updated_files": ["/app/frontend/app/compare.tsx", "/app/backend/tests/conftest.py", "/app/backend/tests/test_hirelens_api.py"],
+  "success_rate": {"backend": "100% (20/20)", "frontend": "100% (all requested flows verified)"},
+  "seed_data_creation": "Backend tests create TEST_-prefixed signup users and one TEST_Integration Role job during the run; cleaned up directly from MongoDB (2 TEST jobs, 2 TEST users removed). Demo dataset (1 job, 18 candidates) untouched and re-verified.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "compare.tsx chip testIDs are now compare-chip-a-*/compare-chip-b-* (fixed). Sign-out avatar: use scoped selector '[data-testid=\"overview-screen\"] [data-testid=\"header-avatar-button\"]' — multiple tab screens stay mounted in DOM. Expo web preview needs ~30-40s initial bundle wait after restart. If backend tests run, they create TEST_ jobs which hijack useActiveJob (newest-first) — clean up via mongosh test_database db.jobs.deleteMany({job_id: {$ne: 'job-demo-backend-platform'}}). LLM (gpt-5.4 via Emergent key) responded live during this run; deterministic fallback also verified present in code.",
+  "rca_of_issue": "Bug: Compare screen candidate-B chips unreachable by testID. Root cause: compare.tsx ChipRow derived testID via label.includes('A'); 'CANDIDATE B'.includes('A') === true so both rows emitted compare-chip-a-*. Fix: explicit side='a'|'b' prop. Verified 18/18 chips per row and B=rank-3 selection updates the VS hero."
+}
