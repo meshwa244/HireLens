@@ -1,11 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 
 import { api } from "@/src/api";
 import { Icon, Pill, PrimaryButton, ScreenHeader, SectionTitle, Telemetry, useUiStyles, WeightRow } from "@/src/components/ui";
 import { useActiveJob } from "@/src/hooks";
 import { useTheme } from "@/src/theme";
+
+const WEIGHT_PRESETS = [
+  { label: "Balanced", caption: "35 / 35 / 20 / 10", weights: { keyword: 0.35, semantic: 0.35, evidence: 0.2, coverage: 0.1 } },
+  { label: "Keyword-heavy", caption: "classic ATS style", weights: { keyword: 0.55, semantic: 0.2, evidence: 0.15, coverage: 0.1 } },
+  { label: "Semantic-heavy", caption: "meaning over keywords", weights: { keyword: 0.2, semantic: 0.55, evidence: 0.15, coverage: 0.1 } },
+  { label: "Evidence-heavy", caption: "proof over claims", weights: { keyword: 0.25, semantic: 0.25, evidence: 0.4, coverage: 0.1 } },
+];
 
 export default function TechnicalScreen() {
   const styles = useUiStyles();
@@ -14,11 +22,31 @@ export default function TechnicalScreen() {
   const params = useLocalSearchParams<{ jobId?: string }>();
   const activeJob = useActiveJob();
   const jobId = params.jobId ?? activeJob?.job_id;
+  const queryClient = useQueryClient();
+  const [tuning, setTuning] = useState(false);
+  const [tunedTop, setTunedTop] = useState("");
   const { data, isLoading } = useQuery({
     queryKey: ["technical", jobId],
     queryFn: () => api.technical(jobId as string),
     enabled: Boolean(jobId),
   });
+
+  const applyPreset = async (preset: (typeof WEIGHT_PRESETS)[number]) => {
+    if (!jobId) return;
+    setTuning(true);
+    setTunedTop("");
+    try {
+      const result = await api.setWeights(jobId, preset.weights);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["screening"] }),
+        queryClient.invalidateQueries({ queryKey: ["overview"] }),
+        queryClient.invalidateQueries({ queryKey: ["technical", jobId] }),
+      ]);
+      setTunedTop(`Re-ranked with ${preset.label}: #1 ${result.top_candidates[0]?.name} (${result.top_candidates[0]?.final_score.toFixed(1)}) · #2 ${result.top_candidates[1]?.name} · #3 ${result.top_candidates[2]?.name}`);
+    } finally {
+      setTuning(false);
+    }
+  };
 
   const ranking = data?.sample_candidate;
 
@@ -57,6 +85,28 @@ export default function TechnicalScreen() {
               <WeightRow label="Requirement coverage" value="10%" color={colors.warning} />
               <Text style={styles.methodNote}>Semantic method: {data?.engine.semantic_method ?? "local deterministic embeddings"}</Text>
             </View>
+
+            {jobId ? (
+              <View style={styles.engineCard} testID="weight-presets">
+                <SectionTitle eyebrow="TUNE THE ENGINE · LIVE" title="Re-weight and re-rank instantly" />
+                <Text style={[styles.mutedText, { marginTop: 10, marginBottom: 12 }]}>Apply a preset and the deterministic pipeline re-scores all candidates immediately — watch the top 3 change.</Text>
+                <View style={{ gap: 8 }}>
+                  {WEIGHT_PRESETS.map((preset) => (
+                    <Pressable
+                      testID={`weight-preset-${preset.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+                      key={preset.label}
+                      disabled={tuning}
+                      onPress={() => void applyPreset(preset)}
+                      style={({ pressed }) => [styles.suggestion, pressed && styles.buttonPressed, tuning && { opacity: 0.6 }]}
+                    >
+                      <Text style={styles.suggestionText}>{preset.label} · {preset.caption}</Text>
+                      {tuning ? <ActivityIndicator color={colors.brand} size="small" /> : <Icon name="tune-vertical" color={colors.brand} size={16} />}
+                    </Pressable>
+                  ))}
+                </View>
+                {tunedTop ? <Text testID="weight-tuned-result" style={[styles.methodNote, { color: colors.brand }]}>{tunedTop}</Text> : null}
+              </View>
+            ) : null}
 
             {ranking ? (
               <>

@@ -88,10 +88,10 @@ export default function CandidateDetailScreen() {
 
         <View style={styles.breakdownCard}>
           <SectionTitle eyebrow="DETERMINISTIC BREAKDOWN" title="How the score was calculated" />
-          <Breakdown testID="breakdown-keyword" label="Keyword relevance" value={ranking.components.keyword_contribution} max={35} color={colors.info} />
-          <Breakdown testID="breakdown-semantic" label="Semantic relevance" value={ranking.components.semantic_contribution} max={35} color={colors.brand} />
-          <Breakdown testID="breakdown-evidence" label="Evidence strength" value={ranking.components.evidence_contribution} max={20} color={colors.success} />
-          <Breakdown testID="breakdown-coverage" label="Requirement coverage" value={ranking.components.coverage_contribution} max={10} color={colors.warning} />
+          <Breakdown testID="breakdown-keyword" label="Keyword relevance" value={ranking.components.keyword_contribution} max={ranking.engine_weights?.keyword ?? 35} color={colors.info} />
+          <Breakdown testID="breakdown-semantic" label="Semantic relevance" value={ranking.components.semantic_contribution} max={ranking.engine_weights?.semantic ?? 35} color={colors.brand} />
+          <Breakdown testID="breakdown-evidence" label="Evidence strength" value={ranking.components.evidence_contribution} max={ranking.engine_weights?.evidence ?? 20} color={colors.success} />
+          <Breakdown testID="breakdown-coverage" label="Requirement coverage" value={ranking.components.coverage_contribution} max={ranking.engine_weights?.coverage ?? 10} color={colors.warning} />
           <View style={styles.penaltyRow}>
             <Text style={styles.penaltyLabel}>Critical requirement penalty</Text>
             <Text style={styles.penaltyValue} testID="breakdown-penalty">−{ranking.critical_penalty.toFixed(1)}</Text>

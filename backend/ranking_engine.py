@@ -260,6 +260,11 @@ def evidence_score(skill: str, candidate: dict[str, Any], matched_chunk: dict[st
 
 def calculate_candidate_score(job: dict[str, Any], candidate: dict[str, Any]) -> dict[str, Any]:
     requirements = job.get("requirements", [])
+    engine_weights = job.get("weights") or {}
+    w_keyword = float(engine_weights.get("keyword", 0.35))
+    w_semantic = float(engine_weights.get("semantic", 0.35))
+    w_evidence = float(engine_weights.get("evidence", 0.20))
+    w_coverage = float(engine_weights.get("coverage", 0.10))
     matches: list[dict[str, Any]] = []
     weighted_keyword = weighted_semantic = weighted_evidence = weighted_coverage = total_weight = 0.0
     for requirement in requirements:
@@ -275,7 +280,7 @@ def calculate_candidate_score(job: dict[str, Any], candidate: dict[str, Any]) ->
             match_type = "semantic"
         elif keyword < 0.7:
             match_type = "partial"
-        final_requirement = (keyword * 0.35) + (semantic * 0.35) + (evidence * 0.20) + (coverage * 0.10)
+        final_requirement = (keyword * w_keyword) + (semantic * w_semantic) + (evidence * w_evidence) + (coverage * w_coverage)
         total_weight += weight
         weighted_keyword += keyword * weight
         weighted_semantic += semantic * weight
@@ -309,10 +314,10 @@ def calculate_candidate_score(job: dict[str, Any], candidate: dict[str, Any]) ->
     matched_preferred = [match["requirement"] for match in matches if match["required_or_preferred"] == "preferred" and match["match_type"] != "missing"]
     penalty = min(30.0, len(missing_required) * 4.0)
     components = {
-        "keyword_contribution": round(keyword_avg * 35, 2),
-        "semantic_contribution": round(semantic_avg * 35, 2),
-        "evidence_contribution": round(evidence_avg * 20, 2),
-        "coverage_contribution": round(coverage_avg * 10, 2),
+        "keyword_contribution": round(keyword_avg * w_keyword * 100, 2),
+        "semantic_contribution": round(semantic_avg * w_semantic * 100, 2),
+        "evidence_contribution": round(evidence_avg * w_evidence * 100, 2),
+        "coverage_contribution": round(coverage_avg * w_coverage * 100, 2),
         "critical_penalty": round(penalty, 2),
     }
     base_score = components["keyword_contribution"] + components["semantic_contribution"] + components["evidence_contribution"] + components["coverage_contribution"]
@@ -344,6 +349,7 @@ def calculate_candidate_score(job: dict[str, Any], candidate: dict[str, Any]) ->
         ],
         "claimed_skills": candidate.get("claimed_skills", []),
         "demonstrated_skills": sorted({skill for chunk in candidate.get("evidence_chunks", []) if chunk.get("source") != "skills" for skill in chunk.get("skills", [])}),
+        "engine_weights": {"keyword": w_keyword * 100, "semantic": w_semantic * 100, "evidence": w_evidence * 100, "coverage": w_coverage * 100},
     }
 
 

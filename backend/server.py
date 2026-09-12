@@ -65,6 +65,13 @@ class RecruiterQuestion(BaseModel):
     job_id: str = "job-demo-backend-platform"
 
 
+class EngineWeights(BaseModel):
+    keyword: float = 0.35
+    semantic: float = 0.35
+    evidence: float = 0.20
+    coverage: float = 0.10
+
+
 def utc_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -397,6 +404,18 @@ async def upload_candidates(job_id: str, files: list[UploadFile] = File(...)) ->
 @api_router.post("/screenings/{job_id}/run")
 async def run_screening(job_id: str) -> dict[str, Any]:
     return await recompute_screening(job_id)
+
+
+@api_router.post("/jobs/{job_id}/weights")
+async def set_engine_weights(job_id: str, payload: EngineWeights) -> dict[str, Any]:
+    job = await get_job(job_id)
+    weights = {"keyword": payload.keyword, "semantic": payload.semantic, "evidence": payload.evidence, "coverage": payload.coverage}
+    if any(value < 0 or value > 1 for value in weights.values()) or not (0.95 <= sum(weights.values()) <= 1.05):
+        raise HTTPException(status_code=400, detail="Weights must be 0–1 and sum to 1.0")
+    job["weights"] = weights
+    await db.jobs.replace_one({"job_id": job_id}, job.copy())
+    screening = await recompute_screening(job_id)
+    return {"weights": weights, "top_candidates": [{"rank": item["rank"], "name": item["name"], "final_score": item["final_score"]} for item in screening["rankings"][:3]]}
 
 
 @api_router.get("/screenings/{screening_id}")

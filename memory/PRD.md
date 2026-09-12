@@ -29,3 +29,6 @@ Build HIRELENS, a hackathon-ready AI talent intelligence platform. Primary focus
 ## Next Tasks
 1. Load official hackathon JD + resumes when provided at ~2pm
 2. Final pre-demo smoke test on device via Expo Go QR
+
+## Later additions (same day)
+- Live engine weight tuning on Technical View: 4 presets (Balanced / Keyword-heavy / Semantic-heavy / Evidence-heavy) POST /api/jobs/{id}/weights, validated 0-1 summing to 1, full re-rank on tap; candidate breakdown maxes follow active weights.

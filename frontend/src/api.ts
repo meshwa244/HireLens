@@ -51,6 +51,7 @@ export type Ranking = {
     critical_penalty: number;
   };
   matches: Match[];
+  engine_weights?: { keyword: number; semantic: number; evidence: number; coverage: number };
   strongest_evidence: { requirement: string; source?: string; text: string }[];
   claimed_skills: string[];
   demonstrated_skills: string[];
@@ -140,4 +141,5 @@ export const api = {
     return response.json() as Promise<{ count: number }>;
   },
   exportUrl: (jobId: string) => `${baseUrl}/api/screenings/screening-${jobId}/export.csv`,
+  setWeights: (jobId: string, weights: { keyword: number; semantic: number; evidence: number; coverage: number }) => request<{ weights: Record<string, number>; top_candidates: { rank: number; name: string; final_score: number }[] }>(`/jobs/${jobId}/weights`, { method: "POST", body: JSON.stringify(weights) }),
 };
