@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import csv
+import io
 import json
 import logging
 import os
@@ -13,12 +15,12 @@ from typing import Any, Optional
 import bcrypt
 import jwt
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, FastAPI, File, Form, Header, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field
 
-from ranking_engine import demo_candidates, demo_job, parse_resume, rank_candidates
+from ranking_engine import canonical_skill, demo_candidates, demo_job, extract_known_skills, parse_resume, rank_candidates
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
@@ -95,15 +97,38 @@ async def current_user(authorization: Optional[str] = Header(default=None)) -> d
     return demo
 
 
+DATASET_DIR = ROOT_DIR / "dataset"
+
+
+def dataset_candidates() -> list[dict[str, Any]]:
+    """Parse the real applicant pool bundled in /dataset (18 resumes)."""
+    candidates: list[dict[str, Any]] = []
+    for index, path in enumerate(sorted(DATASET_DIR.glob("*.txt")), start=1):
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        if not text.strip():
+            continue
+        parsed = parse_resume(text, f"candidate-ds-{index:02d}")
+        if parsed["name"].isupper():
+            parsed["name"] = parsed["name"].title()
+        email_match = re.search(r"[\w.+-]+@[\w-]+\.[\w.]+", text)
+        parsed["email"] = email_match.group(0) if email_match else ""
+        parsed["demo"] = True
+        parsed["source_file"] = path.name
+        candidates.append(parsed)
+    return candidates
+
+
 async def ensure_demo_data() -> None:
     job = demo_job()
     existing = await db.jobs.find_one({"job_id": job["job_id"]}, {"_id": 0})
     if not existing:
         job["created_at"] = utc_iso()
         await db.jobs.insert_one(job.copy())
-    candidates = demo_candidates()
-    existing_count = await db.candidates.count_documents({"job_id": job["job_id"]})
-    if existing_count != len(candidates):
+    candidates = dataset_candidates() or demo_candidates()
+    existing = await db.candidates.find({"job_id": job["job_id"]}, {"_id": 0, "candidate_id": 1, "name": 1}).to_list(300)
+    existing_sig = sorted(f"{item['candidate_id']}:{item['name']}" for item in existing)
+    expected_sig = sorted(f"{candidate['candidate_id']}:{candidate['name']}" for candidate in candidates)
+    if existing_sig != expected_sig:
         await db.candidates.delete_many({"job_id": job["job_id"]})
         for candidate in candidates:
             candidate["job_id"] = job["job_id"]
@@ -289,19 +314,46 @@ async def job_detail(job_id: str) -> dict[str, Any]:
 @api_router.post("/jobs/{job_id}/jd")
 async def upload_jd(job_id: str, text: str = Form(...)) -> dict[str, Any]:
     job = await get_job(job_id)
-    extracted = await llm_text("Extract job requirements as strict JSON only. Never invent requirements.", f"JD:\n{text}\nReturn JSON with required_skills, preferred_skills, responsibilities, experience, education.", f"jd-{job_id}")
-    required = re.findall(r"(?i)\b(Python|Node\.?JS|REST API|SQL|Docker|AWS|Git|React|Kubernetes|CI/CD)\b", text)
-    required = list(dict.fromkeys(required))
+    extracted = await llm_text(
+        "Extract job requirements as strict JSON only. Never invent requirements. Skills must be short canonical technology names (e.g. Node.js, PostgreSQL, Docker).",
+        f"JD:\n{text}\nReturn JSON with keys: required_skills (list), preferred_skills (list), responsibilities (list), experience (list), education (list).",
+        f"jd-{job_id}",
+    )
+    required: list[str] = []
+    preferred: list[str] = []
     if extracted:
         try:
-            data = json.loads(extracted)
-            required = list(dict.fromkeys(data.get("required_skills", required)))
+            data = json.loads(extracted.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip())
+            required = [str(item) for item in data.get("required_skills", [])]
+            preferred = [str(item) for item in data.get("preferred_skills", [])]
         except json.JSONDecodeError:
             pass
+    if not required:
+        required = extract_known_skills(text)
+    required = list(dict.fromkeys(canonical_skill(skill) for skill in required if skill.strip()))[:14]
+    preferred = [skill for skill in dict.fromkeys(canonical_skill(skill) for skill in preferred if skill.strip()) if skill not in required][:8]
     job["description"] = text
-    job["requirements"] = [{"requirement_id": f"req-{i + 1}", "text": f"{skill} experience", "category": "REQUIRED_SKILL", "required_or_preferred": "required", "normalized_skill": skill, "weight": 10} for i, skill in enumerate(required)]
+    requirements = [
+        {"requirement_id": f"req-{index + 1}", "text": f"{skill} experience", "category": "REQUIRED_SKILL", "required_or_preferred": "required", "normalized_skill": skill, "weight": 10}
+        for index, skill in enumerate(required)
+    ] + [
+        {"requirement_id": f"req-{len(required) + index + 1}", "text": f"{skill} familiarity", "category": "PREFERRED_SKILL", "required_or_preferred": "preferred", "normalized_skill": skill, "weight": 4}
+        for index, skill in enumerate(preferred)
+    ]
+    job["requirements"] = requirements
     await db.jobs.replace_one({"job_id": job_id}, job.copy())
     return job
+
+
+@api_router.delete("/jobs/{job_id}")
+async def delete_job(job_id: str) -> dict[str, str]:
+    job = await get_job(job_id)
+    if job.get("demo"):
+        raise HTTPException(status_code=400, detail="The seeded demo dataset cannot be deleted")
+    await db.jobs.delete_one({"job_id": job_id})
+    await db.candidates.delete_many({"job_id": job_id})
+    await db.screening_runs.delete_one({"screening_id": f"screening-{job_id}"})
+    return {"deleted": job_id}
 
 
 async def extract_upload_text(file: UploadFile, content: bytes) -> str:
@@ -317,7 +369,6 @@ async def extract_upload_text(file: UploadFile, content: bytes) -> str:
     if suffix == ".docx":
         try:
             from docx import Document
-            import io
 
             return "\n".join(paragraph.text for paragraph in Document(io.BytesIO(content)).paragraphs)
         except Exception:
@@ -363,6 +414,33 @@ async def screening_rankings(screening_id: str) -> list[dict[str, Any]]:
     return result["rankings"]
 
 
+@api_router.get("/screenings/{screening_id}/export.csv")
+async def export_rankings_csv(screening_id: str) -> Response:
+    result = await screening_detail(screening_id)
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(["Rank", "Candidate", "Final Score", "Keyword Score", "Semantic Score", "Evidence Score", "Coverage Score", "Critical Penalty", "Matched Required", "Missing Required", "Matched Preferred"])
+    for item in result["rankings"]:
+        writer.writerow([
+            item["rank"],
+            item["name"],
+            item["final_score"],
+            item["keyword_score"],
+            item["semantic_score"],
+            item["evidence_score"],
+            item["coverage_score"],
+            item["critical_penalty"],
+            "; ".join(item["matched_required"]),
+            "; ".join(item["missing_required"]),
+            "; ".join(item["matched_preferred"]),
+        ])
+    return Response(
+        content=buffer.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=hirelens-{screening_id}.csv"},
+    )
+
+
 @api_router.get("/candidates/{candidate_id}")
 async def candidate_detail(candidate_id: str) -> dict[str, Any]:
     candidate = await db.candidates.find_one({"candidate_id": candidate_id}, {"_id": 0})
@@ -387,12 +465,33 @@ async def technical_analysis(job_id: str) -> dict[str, Any]:
 async def job_insights(job_id: str) -> dict[str, Any]:
     job = await get_job(job_id)
     requirements = job.get("requirements", [])
+    description = job.get("description", "")
     insights = []
-    if len([item for item in requirements if item.get("required_or_preferred") == "required"]) >= 6:
-        insights.append({"severity": "warning", "title": "High mandatory requirement density", "body": "Consider whether project or internship evidence can satisfy some requirements currently marked mandatory."})
-    skills = [item.get("normalized_skill") for item in requirements]
-    if {"React", "Node.js"}.issubset(set(skills)):
-        insights.append({"severity": "info", "title": "Full-stack scope", "body": "The JD spans frontend and backend technologies. Confirm whether both are genuinely core to the role."})
+    year_match = re.search(r"(?i)(exactly\s+\d+\s+years?|\d+\s*\+\s*years?|minimum\s+of\s+\d+\s+years?)", description)
+    if year_match:
+        insights.append({"severity": "warning", "title": "Potentially restrictive experience wording", "body": f"The JD mentions \"{year_match.group(0)}\" of experience. Consider whether equivalent project or internship evidence could satisfy the requirement."})
+    if re.search(r"(?i)\b(b\.?\s?tech|bachelor'?s?|master'?s?|degree\s+in|mba|ph\.?d)\b", description):
+        insights.append({"severity": "info", "title": "Degree-specific requirement", "body": "The JD names a specific degree. Accepting equivalent demonstrated skill evidence may widen a strong pool without lowering the bar."})
+    required_items = [item for item in requirements if item.get("required_or_preferred") == "required"]
+    if len(required_items) >= 6:
+        insights.append({"severity": "warning", "title": "High mandatory requirement density", "body": f"{len(required_items)} requirements are marked mandatory. Confirm each is genuinely critical — mandatory items dominate the deterministic score."})
+    seen: set[str] = set()
+    dupes: set[str] = set()
+    for item in requirements:
+        skill = item.get("normalized_skill", "")
+        if skill in seen:
+            dupes.add(skill)
+        seen.add(skill)
+    if dupes:
+        insights.append({"severity": "warning", "title": "Duplicate requirements", "body": "These signals appear more than once: " + ", ".join(sorted(dupes)) + ". Duplicates double-count their weight."})
+    frontend_frameworks = {"React", "Vue", "Angular", "Svelte"}
+    framework_hits = frontend_frameworks.intersection(item.get("normalized_skill", "") for item in required_items)
+    if len(framework_hits) >= 2:
+        insights.append({"severity": "warning", "title": "Potentially narrow framework stack", "body": f"Multiple frontend frameworks are mandatory ({', '.join(sorted(framework_hits))}). Are all genuinely required?"})
+    cloud_providers = {"AWS", "Azure", "GCP"}
+    cloud_hits = cloud_providers.intersection(item.get("normalized_skill", "") for item in required_items)
+    if len(cloud_hits) >= 2:
+        insights.append({"severity": "warning", "title": "Multiple cloud providers mandatory", "body": f"The JD requires {', '.join(sorted(cloud_hits))}. Cloud skills transfer well — consider marking one as preferred."})
     if not insights:
         insights.append({"severity": "success", "title": "Balanced requirement set", "body": "No obvious narrow wording patterns were detected by the configured checks."})
     return {"job_id": job_id, "insights": insights, "disclaimer": "These are review prompts, not legal conclusions."}

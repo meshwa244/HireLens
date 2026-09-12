@@ -111,6 +111,16 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 export const api = {
   demoLogin: () => request<{ token: string; user: { full_name: string; role: string } }>("/auth/demo", { method: "POST" }),
   googleSession: (session_id: string) => request<{ session_token: string; user: { full_name: string; role: string } }>("/auth/session", { method: "POST", body: JSON.stringify({ session_id }) }),
+  createJob: (payload: { title: string; company: string; department: string; location: string; employment_type: string; description: string }) => request<Job>("/jobs", { method: "POST", body: JSON.stringify(payload) }),
+  deleteJob: (jobId: string) => request<{ deleted: string }>(`/jobs/${jobId}`, { method: "DELETE" }),
+  uploadJD: async (jobId: string, text: string) => {
+    const form = new FormData();
+    form.append("text", text);
+    const token = await storage.secureGet(TOKEN_KEY, null);
+    const response = await fetch(`${baseUrl}/api/jobs/${jobId}/jd`, { method: "POST", body: form, headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    if (!response.ok) throw new Error(await response.text());
+    return response.json() as Promise<Job>;
+  },
   login: (email: string, password: string) => request<{ token: string; user: { full_name: string; role: string } }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   signup: (full_name: string, email: string, password: string, organization: string) => request<{ token: string; user: { full_name: string; role: string } }>("/auth/signup", { method: "POST", body: JSON.stringify({ full_name, email, password, organization, role: "Recruiter" }) }),
   overview: () => request<Overview>("/overview"),
@@ -129,4 +139,5 @@ export const api = {
     if (!response.ok) throw new Error(await response.text());
     return response.json() as Promise<{ count: number }>;
   },
+  exportUrl: (jobId: string) => `${baseUrl}/api/screenings/screening-${jobId}/export.csv`,
 };

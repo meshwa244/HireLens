@@ -1,0 +1,38 @@
+{
+  "summary": "Iteration 3 verified: real 18-candidate Google Drive dataset fully swapped in (rankings API returns exactly 18, ids candidate-ds-01..18, sorted desc 56.21->1.02, Meera Pillai/Aditya Joshi/Karan Malhotra top, Neha Bhatia/Varun Kapoor bottom, zero fictional names anywhere in UI). Backend 16/16 pytest pass against public URL: rankings shape+order, overview metrics (18 screened), candidate-ds-15 Aditya Joshi detail with REAL resume evidence ('Distributed Task Scheduler | Java, Spring Boot, MySQL, RabbitMQ ... 99.5% task completion reliability'), full job lifecycle (create -> JD extraction via LLM -> empty screening -> delete), demo-job DELETE=400, CSV export (text/csv, header + 18 rows, Meera Pillai row 1), insights 'High mandatory requirement density' warning, demo login + recruiter AI regressions. Frontend (Playwright, 375x667): demo login, Overview shows 18 candidates, Rankings shows all real names + CSV button (rankings-export-button) + 18 visible rows, candidate detail breakdown bars + evidence, Insights warning card, Recruiter AI suggestion chip -> answer card (1528 chars), Compare screen hero+table (Meera vs Aditya), and the complete /job/new flow end-to-end: 'Test QA Engineer' + QA JD -> extraction review showed required chips Selenium/Python/Test Automation/CI -> confirm -> job active -> Rankings empty state -> 'Set active' restored demo job -> trash icon (job-delete-*) deleted test job. Workspace left clean (only demo job remains, demo rankings intact).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "ALL (current_user dependency)", "issue": "Carry-over from iterations 1-2: missing/invalid Authorization silently falls back to demo user (server.py:76-97). Must not ship to production."},
+      {"endpoint": "POST /api/jobs/{id}/jd", "issue": "Duplicate local 'import io' inside extract_upload_text (server.py:372) shadows nothing harmful but io is already imported at module top (line 4) - cosmetic."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "OtherJobRow delete", "issue": "If a non-demo job is active, the demo job row shows a trash icon (job-delete-job-demo-backend-platform); tapping it calls DELETE which the API correctly rejects with 400, but remove() in jobs.tsx:99-107 swallows the error - user gets zero feedback that the demo job cannot be deleted. Either hide the trash icon for demo jobs or surface the 400 detail.", "testID": "job-delete-job-demo-backend-platform", "priority": "MINOR"}
+    ],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_hirelens_iter3.py", "/app/test_reports/pytest/pytest_results_iter3.xml", "/app/test_reports/screenshots_iter3/"],
+  "action_items": [
+    "Minor: hide/disable the delete button for the demo job in OtherJobRow, or show a toast when DELETE /api/jobs/{id} returns 400 (currently fails silently)",
+    "Doc correction: review request said 'candidate-ds-02 = Aditya Joshi' - actual mapping is candidate-ds-15 = Aditya Joshi, candidate-ds-02 = Kavya Menon (sorted filename order). Update test_credentials.md if ids are referenced anywhere",
+    "Carry-over: remove silent demo-user fallback in current_user before any non-demo release"
+  ],
+  "critical_code_review_comments": [
+    "server.py (542 lines) - new endpoints are clean: DELETE /jobs/{id} guards demo flag with 400; export.csv streams via StringIO with proper content-disposition; /jd endpoint has LLM-with-regex-fallback extraction, caps 14 required / 8 preferred, dedupes via canonical_skill; insights heuristics pure regex + set logic, no LLM cost",
+    "rankings reseed compares candidate_id:name signatures - safe against partial reseeds; parse failures skip empty files",
+    "frontend /job/new.tsx: proper loading/error states (new-job-error testID), two-step form with extraction review before setActiveJob; KeyboardAwareScrollView used for the multiline JD input",
+    "hooks.ts useScreening has no keepPreviousData - job switching correctly shows empty state instead of stale rankings (verified; an earlier 'Meera Pillai in DOM' reading was a false positive from the mounted AI tab's answer card)",
+    "No deprecated Expo packages (expo-av, expo-barcode-scanner, expo-background-fetch) present; testIDs on all new interactive elements"
+  ],
+  "updated_files": ["/app/backend/tests/test_hirelens_iter3.py"],
+  "success_rate": {"backend": "100% (16/16)", "frontend": "100% (all 10 requested flows verified)"},
+  "seed_data_creation": "Created and deleted transient jobs: 'TEST_QA Engineer' (pytest) and 'Test QA Engineer' (UI flow). Both removed; only job-demo-backend-platform with 18 candidates remains. No TEST_ data left behind.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Iteration 3 fully verified. Playwright gotchas: (1) tab bar AI tab label is 'AI', not 'Recruiter AI'; (2) overview metric-cards show '-' until query resolves - wait ~4s after login before asserting; (3) expo-router keeps tab screens mounted, so page.content() contains text from previously visited tabs (e.g. AI answer cards mentioning candidate names) - assert via visible elements/testIDs, not raw page content. Candidate id mapping: sorted dataset filenames => ds-15=Aditya Joshi, ds-16=Meera Pillai, ds-03=Varun Kapoor, ds-04=Neha Bhatia. JD extraction + recruiter AI use LLM (gpt-5.4 via emergentintegrations) - allow up to 90s waits. Backend regression suite: backend/tests/test_hirelens_api.py + test_auth_google_session.py + test_hirelens_iter3.py.",
+  "rca_of_issue": "No functional bugs found. One false alarm during testing: after switching active job, page content still contained 'Meera Pillai' - root cause was the Recruiter AI tab screen staying mounted in the DOM with an answer card mentioning her, not stale ranking data (hooks.ts has no keepPreviousData; empty state was correctly visible)."
+}

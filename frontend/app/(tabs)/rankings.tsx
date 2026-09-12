@@ -1,7 +1,8 @@
+import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 
-import type { Ranking } from "@/src/api";
+import { api, type Ranking } from "@/src/api";
 import { EmptyState, Icon, Pill, ScreenHeader, SectionTitle, useUiStyles } from "@/src/components/ui";
 import { useActiveJob, useScreening } from "@/src/hooks";
 import { useTheme } from "@/src/theme";
@@ -52,6 +53,10 @@ export default function RankingsTab() {
             <Text style={styles.sectionTitle}>Ranked by evidence</Text>
             <Text style={styles.mutedText}>{rankings.length} candidates · deterministic hybrid engine</Text>
           </View>
+          <Pressable testID="rankings-export-button" onPress={() => job && void Linking.openURL(api.exportUrl(job.job_id))} style={[styles.compareButton, { backgroundColor: "transparent", borderWidth: 1, borderColor: colors.borderStrong, marginRight: 8 }]}>
+            <Icon name="download-outline" color={colors.brand} size={17} />
+            <Text style={[styles.compareButtonText, { color: colors.brand }]}>CSV</Text>
+          </Pressable>
           <Pressable testID="rankings-compare-button" onPress={() => router.push("/compare")} style={styles.compareButton}>
             <Icon name="compare-horizontal" color={styles.compareButtonText.color as string} size={17} />
             <Text style={styles.compareButtonText}>Compare</Text>

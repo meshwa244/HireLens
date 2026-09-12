@@ -187,7 +187,7 @@ def _expanded_tokens(text: str) -> list[str]:
     return tokens
 
 
-def embedding(text: str, dimensions: int = 96) -> list[float]:
+def embedding(text: str, dimensions: int = 256) -> list[float]:
     counts = Counter(_expanded_tokens(text))
     vector = [0.0] * dimensions
     for token, count in counts.items():
@@ -214,6 +214,17 @@ def semantic_score(requirement_text: str, chunks: list[dict[str, Any]]) -> tuple
     return best_score, best_chunk
 
 
+# Generic JD/resume vocabulary that must never drive a "partial" keyword match.
+OVERLAP_STOPWORDS = {
+    "and", "or", "the", "a", "an", "to", "of", "in", "on", "for", "with", "through", "via", "into",
+    "use", "build", "design", "ship", "deploy", "create", "collaborate", "work", "operate",
+    "services", "service", "production", "production-ready", "systems", "system", "platform",
+    "experience", "familiarity", "modern", "automated", "delivery", "workflows", "reliable",
+    "observability", "relational", "modeling", "review", "code", "cloud", "container",
+    "orchestration", "backend", "apis", "api", "frontend", "data", "requirements",
+}
+
+
 def keyword_score(requirement: dict[str, Any], candidate: dict[str, Any]) -> tuple[float, str]:
     required_skill = canonical_skill(requirement.get("normalized_skill") or requirement["text"])
     candidate_skills = set(candidate.get("skills", []))
@@ -222,10 +233,13 @@ def keyword_score(requirement: dict[str, Any], candidate: dict[str, Any]) -> tup
     related = RELATED_SKILLS.get(required_skill, set())
     if candidate_skills.intersection(related):
         return 0.72, "strong"
-    requirement_tokens = set(tokenize(requirement["text"]))
+    skill_tokens = set(tokenize(required_skill))
+    requirement_tokens = {token for token in tokenize(requirement["text"]) if token not in OVERLAP_STOPWORDS and token not in skill_tokens}
     resume_tokens = set(_expanded_tokens(candidate.get("raw_text", "")))
-    overlap = len(requirement_tokens.intersection(resume_tokens)) / max(1, len(requirement_tokens))
-    if overlap >= 0.45:
+    if not requirement_tokens:
+        return 0.0, "missing"
+    overlap = len(requirement_tokens.intersection(resume_tokens)) / len(requirement_tokens)
+    if overlap >= 0.5:
         return 0.46, "partial"
     if overlap > 0:
         return 0.22, "weak"
@@ -237,7 +251,9 @@ def evidence_score(skill: str, candidate: dict[str, Any], matched_chunk: dict[st
         return 0.0
     exact_chunks = [chunk for chunk in candidate.get("evidence_chunks", []) if skill in chunk.get("skills", [])]
     if not exact_chunks:
-        return min(0.45, float(matched_chunk.get("evidence_strength", 0.0)) * 0.55)
+        # Semantic-only support: the chunk is topically related but never names
+        # the skill — cap low so vague text cannot masquerade as evidence.
+        return min(0.20, float(matched_chunk.get("evidence_strength", 0.0)) * 0.25)
     strengths = [float(chunk.get("evidence_strength", 0.0)) for chunk in exact_chunks]
     return min(1.0, max(strengths) + (0.05 * min(2, len(strengths) - 1)))
 
@@ -291,7 +307,7 @@ def calculate_candidate_score(job: dict[str, Any], candidate: dict[str, Any]) ->
     missing_required = [match["requirement"] for match in required if match["match_type"] == "missing"]
     matched_required = [match["requirement"] for match in required if match["match_type"] != "missing"]
     matched_preferred = [match["requirement"] for match in matches if match["required_or_preferred"] == "preferred" and match["match_type"] != "missing"]
-    penalty = min(35.0, len(missing_required) * 6.0)
+    penalty = min(30.0, len(missing_required) * 4.0)
     components = {
         "keyword_contribution": round(keyword_avg * 35, 2),
         "semantic_contribution": round(semantic_avg * 35, 2),
@@ -300,7 +316,9 @@ def calculate_candidate_score(job: dict[str, Any], candidate: dict[str, Any]) ->
         "critical_penalty": round(penalty, 2),
     }
     base_score = components["keyword_contribution"] + components["semantic_contribution"] + components["evidence_contribution"] + components["coverage_contribution"]
-    final_score = max(0.0, min(100.0, base_score - penalty))
+    # Penalty never erases more than 85% of measured alignment — the bottom of
+    # the pool keeps a meaningful gradient instead of collapsing to zero.
+    final_score = max(0.0, min(100.0, base_score - min(penalty, base_score * 0.85)))
     strongest = sorted(
         [match for match in matches if match["evidence_score"] > 0],
         key=lambda match: (match["evidence_score"], match["weight"]),
