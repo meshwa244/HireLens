@@ -1,14 +1,28 @@
+import * as Linking from "expo-linking";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import * as WebBrowser from "expo-web-browser";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 import { api } from "@/src/api";
 import { Icon, PrimaryButton, useUiStyles } from "@/src/components/ui";
-import { getStoredUser, hasSession, saveSession } from "@/src/session";
+import { hasSession, saveSession } from "@/src/session";
 import { useTheme } from "@/src/theme";
+
+WebBrowser.maybeCompleteAuthSession();
+
+// One-time use guard: the same session_id can surface from the auth-session
+// result, a hot deep link and a cold start — exchange it exactly once.
+const exchangedSessionIds = new Set<string>();
+
+function extractSessionId(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const match = url.match(/[?#&]session_id=([^&#]+)/);
+  return match?.[1] ?? null;
+}
 
 function Field({ label, value, onChangeText, placeholder, secureTextEntry, keyboardType, testID }: { label: string; value: string; onChangeText: (value: string) => void; placeholder: string; secureTextEntry?: boolean; keyboardType?: "email-address" | "default"; testID: string }) {
   const styles = useUiStyles();
@@ -32,22 +46,103 @@ export default function AuthScreen() {
   const [password, setPassword] = useState("");
   const [organization, setOrganization] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const exchangeGoogleSession = async (sessionId: string): Promise<boolean> => {
+    if (exchangedSessionIds.has(sessionId)) return false;
+    exchangedSessionIds.add(sessionId);
+    const result = await api.googleSession(sessionId);
+    await saveSession(result.session_token, result.user);
+    router.replace("/(tabs)/overview");
+    return true;
+  };
 
   useEffect(() => {
     let mounted = true;
     void (async () => {
-      if (await hasSession()) {
-        await getStoredUser();
-        if (mounted) router.replace("/(tabs)/overview");
-        return;
+      try {
+        // Web redirect return: session_id is in the URL — process FIRST.
+        if (Platform.OS === "web" && typeof window !== "undefined") {
+          const sessionId = extractSessionId(`${window.location.search}${window.location.hash}`);
+          if (sessionId) {
+            try {
+              await exchangeGoogleSession(sessionId);
+            } catch {
+              exchangedSessionIds.delete(sessionId);
+              if (mounted) {
+                setError("Google sign-in failed. Please try again.");
+                setChecking(false);
+              }
+            } finally {
+              window.history.replaceState(window.history.state, "", window.location.pathname);
+            }
+            return;
+          }
+        }
+        // Mobile cold start: app reopened via deep link carrying session_id.
+        if (Platform.OS !== "web") {
+          const initial = await Linking.getInitialURL();
+          const sessionId = extractSessionId(initial);
+          if (sessionId) {
+            try {
+              await exchangeGoogleSession(sessionId);
+            } catch {
+              exchangedSessionIds.delete(sessionId);
+              if (mounted) setChecking(false);
+            }
+            return;
+          }
+        }
+        if (await hasSession()) {
+          if (mounted) router.replace("/(tabs)/overview");
+          return;
+        }
+      } finally {
+        if (mounted) setChecking(false);
       }
-      if (mounted) setChecking(false);
     })();
     return () => {
       mounted = false;
     };
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const startGoogleSignIn = async () => {
+    setError("");
+    setGoogleLoading(true);
+    try {
+      if (Platform.OS === "web") {
+        if (typeof window !== "undefined") {
+          const redirectUrl = `${window.location.origin}/`;
+          window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+        }
+        return;
+      }
+      const redirectUrl = Linking.createURL("");
+      const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+      // Android (Expo Go) often returns dismiss with no URL even on success —
+      // the deep-link listener and getInitialURL are co-equal sources.
+      let captured: string | null = null;
+      const subscription = Linking.addEventListener("url", (event) => {
+        captured = event.url;
+      });
+      try {
+        const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
+        const url = result.type === "success" && result.url ? result.url : captured ?? (await Linking.getInitialURL());
+        const sessionId = extractSessionId(url);
+        if (sessionId) {
+          await exchangeGoogleSession(sessionId);
+        }
+      } finally {
+        subscription.remove();
+      }
+    } catch {
+      setError("Google sign-in failed. Please try again.");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const submit = async () => {
     setLoading(true);
@@ -106,7 +201,9 @@ export default function AuthScreen() {
             </View>
           )}
           {error ? <Text testID="auth-error-text" style={styles.errorText}>{error}</Text> : null}
-          <PrimaryButton testID="auth-submit-button" label={mode === "demo" ? "Enter demo workspace" : mode === "login" ? "Sign in" : "Create recruiter account"} onPress={submit} icon={mode === "demo" ? "arrow-right" : "lock-outline"} loading={loading} />
+          <PrimaryButton testID="auth-submit-button" label={mode === "demo" ? "Enter demo workspace" : mode === "login" ? "Sign in" : "Create recruiter account"} onPress={() => void submit()} icon={mode === "demo" ? "arrow-right" : "lock-outline"} loading={loading} />
+          <View style={{ height: 10 }} />
+          <PrimaryButton testID="google-signin-button" label="Continue with Google" onPress={() => void startGoogleSignIn()} icon="google" loading={googleLoading} secondary />
           <View style={styles.authSwitch}>
             {mode !== "demo" ? (
               <Pressable testID="auth-use-demo-link" onPress={() => setMode("demo")}>

@@ -110,6 +110,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   demoLogin: () => request<{ token: string; user: { full_name: string; role: string } }>("/auth/demo", { method: "POST" }),
+  googleSession: (session_id: string) => request<{ session_token: string; user: { full_name: string; role: string } }>("/auth/session", { method: "POST", body: JSON.stringify({ session_id }) }),
   login: (email: string, password: string) => request<{ token: string; user: { full_name: string; role: string } }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   signup: (full_name: string, email: string, password: string, organization: string) => request<{ token: string; user: { full_name: string; role: string } }>("/auth/signup", { method: "POST", body: JSON.stringify({ full_name, email, password, organization, role: "Recruiter" }) }),
   overview: () => request<Overview>("/overview"),

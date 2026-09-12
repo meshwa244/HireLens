@@ -1,0 +1,37 @@
+{
+  "summary": "Iteration 2 focused testing of the new Emergent Google Sign-In feature + auth regressions. Backend: 8/8 new pytest tests pass against public URL — POST /api/auth/session returns 401 'Invalid or expired Google session' for invalid/empty session_id, 422 for missing/wrong body field; regressions all green (demo login token, overview metrics, 18 ranked candidates sorted desc, email login 401). Frontend (Playwright, mobile viewport): google-signin-button visible in all 3 modes (demo/login/signup); clicking it navigates to https://auth.emergentagent.com/oauth/?redirect=https%3A%2F%2Fevidence-rank-1.preview.emergentagent.com%2F with correct redirect param; demo login end-to-end lands on Overview; sign out via header-avatar-button returns to auth and session stays cleared after reload; fresh load with /#session_id=fake123 shows auth-loading, then auth-error-text 'Google sign-in failed. Please try again.', does NOT enter the app, and demo login still works afterwards. Real Google OAuth round-trip not tested (requires a real Google account) — redirect target and endpoint contract verified instead.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "ALL (current_user dependency)", "issue": "Still-present known issue from iteration 1: any missing/invalid/expired Authorization header silently falls back to the demo user (server.py:74-97). Now extended to user_sessions lookup, but invalid session_tokens also degrade to demo instead of 401. Must not ship to production."},
+      {"endpoint": "POST /api/auth/session", "issue": "No rate limiting / replay protection on the exchange endpoint; each call hits demobackend.emergentagent.com upstream. Low risk for demo build."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Failed Google session exchange on web", "issue": "On exchange failure the URL hash is NOT cleaned: window.history.replaceState only runs inside the success try-block (app/index.tsx:71). After a failed exchange, /#session_id=fake123 remains in the URL, so any manual reload re-attempts the exchange and re-shows the error. Minor UX papercut; double-exchange guard only dedupes within one mount.", "affected_testIDs": ["auth-error-text", "auth-screen"]}
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_auth_google_session.py", "/app/test_reports/pytest/pytest_results_iter2.xml", "/app/test_reports/screenshots_iter2/"],
+  "action_items": [
+    "Move window.history.replaceState session_id cleanup into a finally block (or also call it in the catch) in app/index.tsx so failed exchanges strip session_id from the URL",
+    "Carry-over from iteration 1: remove silent demo-user fallback in current_user before any non-demo release (now also applies to session_token path)",
+    "When a real Google account is available, do one live OAuth round-trip to verify user upsert + user_sessions insert + 7-day expiry end-to-end (not testable without real account)"
+  ],
+  "critical_code_review_comments": [
+    "server.py /auth/session: correct 401 on upstream non-200, email-based upsert excludes password_hash from response, _id excluded, 7-day expiry + TTL index on user_sessions (indexes created on startup lines 434-436). httpx imported inside the handler — works but per-request import is unusual; move to module top",
+    "index.tsx: double-exchange guard (module-level exchangedSessionIds Set) correctly handles auth-session result + deep link + cold start surfacing the same session_id; on failure the id is removed from the guard so retry is possible",
+    "Frontend uses expo-web-browser + expo-linking (both current, non-deprecated); no expo-av/barcode-scanner/background-fetch anywhere; testIDs present on all new interactive elements (google-signin-button, auth-error-text, auth-loading)",
+    "api.ts googleSession() reuses the shared request() helper, so the returned session_token is subsequently sent as Bearer and accepted by current_user via user_sessions lookup"
+  ],
+  "updated_files": ["/app/backend/tests/test_auth_google_session.py"],
+  "success_rate": {"backend": "100% (8/8 new auth tests)", "frontend": "100% (all 8 requested flows verified; 1 minor UX papercut found)"},
+  "seed_data_creation": "No new seed data. Invalid session_id exchange attempts fail before any DB write (verified no TEST_ data needed). Demo dataset untouched.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Iteration 2 (Google Sign-In) fully verified except live OAuth round-trip. IMPORTANT Playwright gotcha: page.goto() to the same URL with a different #hash does NOT reload the page — to test URL session_id handling, goto('about:blank') first, then goto(url + '#session_id=...') to force a fresh bundle load. After go_back() from auth.emergentagent.com the auth screen resets to demo mode (state not preserved). Backend test file for this feature: /app/backend/tests/test_auth_google_session.py (8 tests). Demo login button is auth-submit-button; sign out via '[data-testid=\"overview-screen\"] [data-testid=\"header-avatar-button\"]'.",
+  "rca_of_issue": "Minor issue: stale session_id in URL after failed exchange. Repro: fresh load https://evidence-rank-1.preview.emergentagent.com/#session_id=fake123 -> exchange fails 401 -> error text shows -> URL still contains #session_id=fake123 -> reload re-triggers error. Root cause: app/index.tsx:71 calls window.history.replaceState only after successful exchangeGoogleSession; the catch block (lines 72-78) sets the error but never cleans the URL. Mitigation: move replaceState into a finally block or duplicate it in catch."
+}

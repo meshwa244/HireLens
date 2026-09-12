@@ -72,17 +72,27 @@ def token_for(user: dict[str, Any]) -> str:
 
 
 async def current_user(authorization: Optional[str] = Header(default=None)) -> dict[str, Any]:
+    demo = {"user_id": "demo-user", "full_name": "Demo Recruiter", "role": "Demo User", "demo": True}
     if not authorization:
-        return {"user_id": "demo-user", "full_name": "Demo Recruiter", "role": "Demo User", "demo": True}
+        return demo
+    token = authorization.removeprefix("Bearer ").strip()
     try:
-        token = authorization.removeprefix("Bearer ").strip()
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         user = await db.users.find_one({"user_id": payload["sub"]}, {"_id": 0})
         if user:
             return user
-    except Exception as exc:
-        logger.info("Ignoring invalid optional session: %s", exc)
-    return {"user_id": "demo-user", "full_name": "Demo Recruiter", "role": "Demo User", "demo": True}
+    except Exception:
+        pass
+    session = await db.user_sessions.find_one({"session_token": token}, {"_id": 0})
+    if session:
+        expires = session.get("expires_at")
+        if expires and expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        if expires and expires > datetime.now(timezone.utc):
+            user = await db.users.find_one({"user_id": session["user_id"]}, {"_id": 0})
+            if user:
+                return user
+    return demo
 
 
 async def ensure_demo_data() -> None:
@@ -189,6 +199,42 @@ async def root() -> dict[str, str]:
 async def demo_login() -> dict[str, Any]:
     user = {"user_id": "demo-user", "full_name": "Demo Recruiter", "email": "demo@hirelens.ai", "role": "Demo User", "demo": True}
     return {"token": token_for(user), "user": user}
+
+
+class SessionExchangeRequest(BaseModel):
+    session_id: str
+
+
+@api_router.post("/auth/session")
+async def auth_session(payload: SessionExchangeRequest) -> dict[str, Any]:
+    import httpx
+
+    async with httpx.AsyncClient(timeout=10) as http_client:
+        response = await http_client.get("https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data", headers={"X-Session-ID": payload.session_id})
+    if response.status_code != 200:
+        raise HTTPException(status_code=401, detail="Invalid or expired Google session")
+    data = response.json()
+    email = str(data.get("email") or "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=401, detail="Google account has no email")
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+    if not user:
+        user = {
+            "user_id": f"user_{uuid.uuid4().hex[:12]}",
+            "full_name": str(data.get("name") or email.split("@")[0]),
+            "email": email,
+            "organization": "",
+            "role": "Recruiter",
+            "auth_provider": "google",
+            "picture": data.get("picture"),
+            "created_at": utc_iso(),
+        }
+        await db.users.insert_one(user.copy())
+    session_token = str(data["session_token"])
+    now = datetime.now(timezone.utc)
+    await db.user_sessions.insert_one({"session_token": session_token, "user_id": user["user_id"], "created_at": now, "expires_at": now + timedelta(days=7)})
+    public = {key: value for key, value in user.items() if key != "password_hash"}
+    return {"session_token": session_token, "user": public}
 
 
 @api_router.post("/auth/signup")
@@ -383,6 +429,11 @@ app.add_middleware(CORSMiddleware, allow_credentials=True, allow_origins=["*"], 
 
 @app.on_event("startup")
 async def startup() -> None:
+    await db.users.create_index("email", unique=True, sparse=True)
+    await db.users.create_index("user_id", unique=True)
+    await db.user_sessions.create_index("session_token", unique=True)
+    await db.user_sessions.create_index("user_id")
+    await db.user_sessions.create_index("expires_at", expireAfterSeconds=0)
     await ensure_demo_data()
 
 
