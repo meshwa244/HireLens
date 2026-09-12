@@ -181,6 +181,18 @@ async def recompute_screening(job_id: str, persist: bool = True) -> dict[str, An
 
 def grounded_fallback(question: str, rankings: list[dict[str, Any]], job: dict[str, Any]) -> str:
     lower = question.lower()
+    # Name-aware "Why is X ranked above Y?" — deterministic comparison of any pair.
+    mentioned = [item for item in rankings if any(len(part) > 2 and part in lower for part in item["name"].lower().split())]
+    if len(mentioned) >= 2:
+        first, second = sorted(mentioned[:2], key=lambda item: item["rank"])
+        stronger = []
+        for left, right in zip(first.get("matches", []), second.get("matches", [])):
+            delta = left["final_requirement_score"] - right["final_requirement_score"]
+            if delta > 0.12:
+                stronger.append(left["requirement"])
+        factors = ", ".join(stronger[:3]) or "higher weighted requirement coverage"
+        missing_note = f" {second['name']} is also missing required signals: {', '.join(second['missing_required'][:3])}." if second.get("missing_required") else ""
+        return f"{first['name']} (rank {first['rank']}, {first['final_score']:.1f}) ranks above {second['name']} (rank {second['rank']}, {second['final_score']:.1f}) by {first['final_score'] - second['final_score']:.1f} points, primarily due to stronger measured performance on {factors}.{missing_note} This comparison uses keyword, semantic, evidence and coverage components from the deterministic screening run."
     if "why" in lower and ("above" in lower or ">" in lower) and len(rankings) >= 2:
         first, second = rankings[0], rankings[1]
         stronger = []
@@ -521,7 +533,11 @@ async def recruiter_ai(payload: RecruiterQuestion) -> dict[str, Any]:
     job = await get_job(payload.job_id)
     screening = await recompute_screening(payload.job_id, persist=False)
     fallback = grounded_fallback(payload.question, screening["rankings"], job)
-    context = {"question": payload.question, "job": job["title"], "rankings": screening["rankings"][:8]}
+    compact = [
+        {"rank": item["rank"], "name": item["name"], "final_score": item["final_score"], "components": item["components"], "matched_required": item["matched_required"], "missing_required": item["missing_required"], "strongest_evidence": item["strongest_evidence"][:3]}
+        for item in screening["rankings"]
+    ]
+    context = {"question": payload.question, "job": job["title"], "rankings": compact}
     response = await llm_text("You are HireLens Recruiter AI. Answer only from the supplied structured evidence. Never invent candidate facts or scores. If evidence is absent, say so. Do not recalculate scores.", json.dumps(context), f"recruiter-{payload.job_id}")
     return {"answer": response or fallback, "grounded": bool(response), "sources": ["deterministic screening run", "candidate requirement matches"], "screening_id": screening["screening_id"]}
 

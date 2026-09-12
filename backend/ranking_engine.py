@@ -21,6 +21,8 @@ EVIDENCE_STRENGTH = {
     "experience": 1.00,
     "research": 0.70,
     "education": 0.50,
+    "achievements": 0.45,
+    "summary": 0.35,
 }
 
 SKILL_ALIASES = {
@@ -91,25 +93,78 @@ SECTION_HEADERS = {
     "skills": "skills",
     "technical skills": "skills",
     "core competencies": "skills",
+    "competencies": "skills",
+    "key skills": "skills",
+    "skills & expertise": "skills",
+    "skills and expertise": "skills",
+    "technical proficiencies": "skills",
+    "technical expertise": "skills",
+    "areas of expertise": "skills",
     "experience": "experience",
     "work experience": "experience",
     "professional experience": "experience",
+    "employment history": "experience",
+    "work history": "experience",
     "internship": "internships",
     "internships": "internships",
     "projects": "projects",
     "academic projects": "projects",
     "personal projects": "projects",
+    "project work": "projects",
+    "project experience": "projects",
+    "key projects": "projects",
+    "selected projects": "projects",
     "certifications": "certifications",
+    "certificates": "certifications",
+    "licenses & certifications": "certifications",
     "courses": "coursework",
     "coursework": "coursework",
+    "training": "coursework",
+    "trainings": "coursework",
     "education": "education",
+    "academic background": "education",
+    "qualifications": "education",
     "research": "research",
+    "publications": "research",
+    "summary": "summary",
+    "professional summary": "summary",
+    "career summary": "summary",
+    "objective": "summary",
+    "about": "summary",
+    "achievements": "achievements",
+    "awards": "achievements",
+    "accomplishments": "achievements",
+}
+
+# Common misspellings of section headers seen in real resumes.
+HEADER_TYPOS = {
+    "expereince": "experience",
+    "exprience": "experience",
+    "experiance": "experience",
+    "skils": "skills",
+    "skillls": "skills",
+    "proffessional": "professional",
+    "profesional": "professional",
+    "eduction": "education",
+    "educaton": "education",
+    "projets": "projects",
+    "certfications": "certifications",
+    "certficates": "certifications",
+    "acheivements": "achievements",
 }
 
 
 def normalize_text(value: str) -> str:
-    value = value.replace("|", ",").replace("•", " ")
+    value = value.replace("|", ",")
+    # Messy resume cleanup: unicode bullets, dashes and symbol separators.
+    value = re.sub(r"[•▪◦●○◆·✓✔*–—_]+", " ", value)
     return re.sub(r"\s+", " ", value.strip().lower())
+
+
+def normalize_heading(line: str) -> str:
+    heading = normalize_text(line).rstrip(":").strip()
+    words = [HEADER_TYPOS.get(word, word) for word in heading.split()]
+    return " ".join(words)
 
 
 def canonical_skill(value: str) -> str:
@@ -136,7 +191,7 @@ def split_sections(text: str) -> dict[str, str]:
     current = "summary"
     for raw_line in text.splitlines():
         line = raw_line.strip()
-        heading = normalize_text(line).rstrip(":")
+        heading = normalize_heading(line)
         if heading in SECTION_HEADERS and len(line) < 42:
             current = SECTION_HEADERS[heading]
             sections.setdefault(current, [])
