@@ -1,0 +1,18 @@
+Ramya Nagaraj
+ramya.nagaraj.ece@gmail.com | +91 98xxxxxx14 | Bengaluru
+SUMMARY
+Electronics and Communication Engineering student with a background in embedded systems and hardware
+programming. Minimal exposure to web development.
+EDUCATION
+B.E. Electronics and Communication Engineering, BMS College of Engineering (2023-2027), CGPA: 8.0/10
+SKILLS
+Embedded C, Arduino, Raspberry Pi, basic Python, MATLAB, circuit design (KiCad), basic HTML
+PROJECTS
+Smart Irrigation System
+•
+Built an IoT-based irrigation controller using Arduino, embedded C, and soil moisture sensors
+Home Automation Prototype
+•
+Raspberry Pi based home automation system with basic Python scripts controlling relays
+CERTIFICATIONS
+Embedded Systems with Arduino (Udemy)

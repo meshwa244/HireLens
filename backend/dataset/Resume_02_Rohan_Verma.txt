@@ -1,0 +1,27 @@
+Rohan Verma
+rohan.verma98@gmail.com | +91 98xxxxxx02 | linkedin.com/in/rohanverma | Mysuru
+SUMMARY
+Full stack developer with a strong portfolio of deployed React/Node projects and active hackathon participation.
+Comfortable working across the stack from database design to UI polish.
+EDUCATION
+B.Tech Information Technology, Manipal Institute of Technology (2023-2027), CGPA: 8.9/10
+SKILLS
+React.js, Next.js, Node.js, Express, PostgreSQL, MongoDB, TypeScript, REST APIs, Docker (basic), Git, Postman,
+Figma (basic)
+EXPERIENCE
+Freelance Web Developer (2025-Present)
+•
+Delivered 3 small business websites with React frontends and Node/Express backends
+•
+Set up PostgreSQL schemas and REST APIs for client inventory management systems
+PROJECTS
+EventHive - College Event Management Platform
+•
+Built with Next.js, Express, and PostgreSQL; supports event registration and QR-based check-in
+•
+Won 2nd place at a regional inter-college hackathon (2026)
+Expense Tracker API
+•
+Designed REST APIs in Node.js/Express with JWT auth; documented with Swagger
+CERTIFICATIONS
+The Complete Node.js Developer Course (Udemy)

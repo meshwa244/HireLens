@@ -1,0 +1,20 @@
+Arjun Kumar
+arjun.kumar.android@gmail.com | +91 98xxxxxx09 | github.com/arjunkumar | Bengaluru
+SUMMARY
+Android developer with experience building mobile apps in Kotlin. Has integrated REST APIs into mobile apps but
+has not built web frontends or Node.js backends.
+EDUCATION
+B.E. Computer Science, MS Ramaiah Institute of Technology (2023-2027), CGPA: 8.3/10
+SKILLS
+Kotlin, Java, Android SDK, REST API integration (Retrofit), Firebase, SQLite, Git, basic Python
+PROJECTS
+Campus Food Ordering App (Android)
+•
+Built a native Android app in Kotlin, integrated with a Firebase backend
+•
+Used Retrofit to consume REST APIs for menu and order data
+Habit Tracker App
+•
+Android app with local SQLite storage and Firebase authentication
+CERTIFICATIONS
+Android Developer Nanodegree (partial, Udacity)

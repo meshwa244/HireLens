@@ -1,0 +1,20 @@
+Ananya Das
+ananya.das.cs@gmail.com | +91 98xxxxxx05 | github.com/ananyadas | Kolkata
+SUMMARY
+Backend developer with a strong grasp of Python and Django. Comfortable building REST APIs and working with
+relational databases; has not worked with React or Node.js.
+EDUCATION
+B.E. Information Science, BMS College of Engineering (2023-2027), CGPA: 8.4/10
+SKILLS
+Python, Django, Django REST Framework, PostgreSQL, SQLite, Git, basic HTML/CSS, Postman
+PROJECTS
+Campus Lost & Found Portal
+•
+Built with Django and Django REST Framework, PostgreSQL as the database
+•
+Server-rendered templates with Django (no separate JS frontend framework)
+Blog API
+•
+REST API built with DRF supporting CRUD operations and token authentication
+CERTIFICATIONS
+Python for Everybody (Coursera)

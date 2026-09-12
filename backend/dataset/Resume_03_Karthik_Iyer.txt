@@ -1,0 +1,20 @@
+Karthik Iyer
+karthik.iyer.dev@gmail.com | +91 98xxxxxx03 | github.com/kiyer | Chennai
+SUMMARY
+Backend-focused developer with strong Java and Spring Boot fundamentals. Some exposure to frontend basics
+through college coursework but limited hands-on React experience.
+EDUCATION
+B.E. Computer Science, PES University (2023-2027), CGPA: 8.2/10
+SKILLS
+Java, Spring Boot, Hibernate, MySQL, REST APIs, HTML/CSS, basic JavaScript, Git, Postman, Maven
+PROJECTS
+Library Management System
+•
+Built a REST API backend in Spring Boot with MySQL for a college library system
+•
+Basic HTML/CSS frontend to consume the APIs; no frontend framework used
+Student Attendance Tracker
+•
+Java console-based application with MySQL database integration
+CERTIFICATIONS
+Java Programming Masterclass (Udemy)

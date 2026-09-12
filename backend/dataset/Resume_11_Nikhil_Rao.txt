@@ -1,0 +1,20 @@
+Nikhil Rao
+nikhil.rao.dev@gmail.com | +91 98xxxxxx11 | github.com/nikhilrao | Mangaluru
+SUMMARY
+Full stack developer with hands-on experience in Angular and Node.js. Comfortable with backend REST API
+design but has not worked with React specifically.
+EDUCATION
+B.E. Computer Science, NMAM Institute of Technology (2023-2027), CGPA: 8.1/10
+SKILLS
+Angular, TypeScript, Node.js, Express.js, MongoDB, MySQL, REST APIs, Git, RxJS, Bootstrap
+PROJECTS
+Hostel Complaint Management System
+•
+Built with Angular frontend and Node.js/Express backend, MongoDB for data storage
+•
+Implemented role-based dashboards for students, wardens, and admin staff
+Inventory Management Tool
+•
+Node.js/Express REST API with MySQL, basic Angular frontend for CRUD operations
+CERTIFICATIONS
+Angular - The Complete Guide (Udemy)

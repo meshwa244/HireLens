@@ -1,0 +1,29 @@
+Priya Menon
+priya.menon.dev@gmail.com | +91 98xxxxxx08 | github.com/priyamenon | Kochi
+SUMMARY
+Full stack developer proficient in the MERN stack with two internships and multiple deployed projects. Comfortable
+with agile workflows, testing, and cloud basics.
+EDUCATION
+B.Tech Computer Science, National Institute of Technology Karnataka (2023-2027), CGPA: 9.1/10
+SKILLS
+JavaScript, TypeScript, React.js, Node.js, Express.js, MongoDB, PostgreSQL, REST APIs, Git, Docker, AWS
+(EC2, S3, basic Lambda), Jest, Agile/Scrum
+EXPERIENCE
+Full Stack Intern, BrightPath Technologies (Dec 2025-Feb 2026)
+•
+Built and shipped 3 features on a production Node.js/Express + React application
+•
+Wrote unit and integration tests using Jest, maintaining >80% coverage on new code
+•
+Participated in 2-week sprints, daily standups, and sprint retrospectives
+Software Intern, CodeCrafters Startup (Jun-Jul 2025)
+•
+Migrated part of a legacy jQuery frontend to React components
+PROJECTS
+SkillBridge - Peer Mentorship Platform
+•
+Full stack MERN app with React frontend, Node/Express backend, MongoDB database
+•
+Containerized with Docker; deployed on AWS EC2 with an S3 bucket for file uploads
+CERTIFICATIONS
+AWS Cloud Practitioner Essentials, Agile Development Specialization (Coursera)

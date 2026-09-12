@@ -1,0 +1,22 @@
+Farhan Sheikh
+farhan.sheikh.dev@gmail.com | +91 98xxxxxx15 | github.com/farhansheikh | Bengaluru
+SUMMARY
+Full stack web developer with a completed coding bootcamp and multiple deployed MERN applications. Active
+open-source contributor comfortable working with REST APIs and Git workflows.
+EDUCATION
+B.C.A, Bengaluru City University (2023-2026), CGPA: 8.4/10
+Full Stack Web Development Bootcamp, Masai School (2026)
+SKILLS
+JavaScript, React.js, Redux Toolkit, Node.js, Express.js, MongoDB, PostgreSQL, REST APIs, Git/GitHub, Docker
+(basic), Tailwind CSS, Jest
+PROJECTS
+TaskFlow - Team Task Management App
+•
+Full stack MERN app with drag-and-drop task boards, real-time updates via Socket.io
+•
+Deployed on Render and Netlify; 40+ GitHub stars from bootcamp community
+Open Source Contribution - DevConnect
+•
+Contributed 5 merged pull requests fixing bugs and adding features to a React/Node open-source project
+CERTIFICATIONS
+Full Stack Web Development Certificate (Masai School)

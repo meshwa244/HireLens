@@ -39,11 +39,15 @@ SKILL_ALIASES = {
     "express.js": "Express.js",
     "rest": "REST API",
     "rest api": "REST API",
+    "rest apis": "REST API",
     "restful api": "REST API",
     "rest services": "REST API",
     "postgres": "PostgreSQL",
     "postgresql": "PostgreSQL",
+    "mysql": "MySQL",
     "sql": "SQL",
+    "jest": "Jest",
+    "mocha": "Mocha",
     "mongodb": "MongoDB",
     "mongo": "MongoDB",
     "nosql": "NoSQL",
@@ -417,30 +421,17 @@ def rank_candidates(job: dict[str, Any], candidates: list[dict[str, Any]]) -> li
 
 
 def demo_job() -> dict[str, Any]:
-    requirements = [
-        ("Build backend APIs with Python or Node.js", "RESPONSIBILITY", "required", "Node.js", 10),
-        ("Design and ship REST API services", "RESPONSIBILITY", "required", "REST API", 10),
-        ("Use SQL and relational data modeling", "REQUIRED_SKILL", "required", "SQL", 10),
-        ("Create production-ready services with Docker", "REQUIRED_SKILL", "required", "Docker", 10),
-        ("Deploy services to a cloud platform", "REQUIRED_SKILL", "required", "AWS", 8),
-        ("Collaborate through Git and code review", "REQUIRED_SKILL", "required", "Git", 7),
-        ("Work with a modern JavaScript frontend", "REQUIRED_SKILL", "preferred", "React", 4),
-        ("Use automated delivery or CI/CD workflows", "PREFERRED_SKILL", "preferred", "CI/CD", 4),
-        ("Operate container orchestration in production", "PREFERRED_SKILL", "preferred", "Kubernetes", 3),
-        ("Build observability into reliable systems", "RESPONSIBILITY", "preferred", "Redis", 3),
-    ]
     return {
         "job_id": "job-demo-backend-platform",
-        "title": "Backend Platform Engineer",
-        "company": "Northstar Labs",
-        "department": "Engineering",
-        "location": "Remote · Bengaluru / London",
-        "employment_type": "Full-time",
+        "title": "Junior Full Stack Developer Intern",
+        "company": "TechNova Solutions",
+        "department": "Product Engineering",
+        "location": "Bengaluru (Hybrid) · 6-Month Internship",
+        "employment_type": "Internship",
         "demo": True,
-        "description": "Build backend APIs and reliable platform services for Northstar Labs. Work with REST APIs, SQL data models, Docker, cloud deployment, Git and collaborative code review. React, CI/CD, Kubernetes and observability are valuable preferred skills.",
+        "description": "TechNova Solutions is looking for a Junior Full Stack Developer Intern. Build and ship features across React (frontend) and Node.js/Express (backend), design and consume REST APIs, work with SQL and NoSQL databases, use Git/GitHub, and collaborate in an agile team.",
         "requirements": [
-            {"requirement_id": f"req-{index + 1}", "text": text, "category": category, "required_or_preferred": tier, "normalized_skill": skill, "weight": weight}
-            for index, (text, category, tier, skill, weight) in enumerate(requirements)
+            {"requirement_id": "req-1", "text": "JavaScript experience", "category": "REQUIRED_SKILL", "required_or_preferred": "required", "normalized_skill": "JavaScript", "weight": 10},
         ],
     }
 

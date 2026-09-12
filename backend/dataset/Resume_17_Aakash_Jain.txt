@@ -1,0 +1,16 @@
+Aakash Jain
+aakash.jain.cse@gmail.com | +91 98xxxxxx17 | github.com/aakashjain | Jaipur
+SUMMARY
+Computer Science student focused primarily on data structures, algorithms, and competitive programming. No web
+development projects or internship experience yet.
+EDUCATION
+B.Tech Computer Science, Manipal Institute of Technology (2023-2027), CGPA: 7.9/10
+SKILLS
+C++, Data Structures & Algorithms, basic Python, basic SQL, Git (basic)
+PROJECTS
+Competitive Programming Practice
+•
+Solved 400+ problems on Codeforces and LeetCode, rating 1500+ on Codeforces
+Library Book Search (C++ console app)
+•
+Console-based book search and inventory tool built in C++ with file handling

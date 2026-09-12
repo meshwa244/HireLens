@@ -1,0 +1,31 @@
+Aditi Sharma
+aditi.sharma.cs@gmail.com | +91 98xxxxxx01 | github.com/aditisharma | Bengaluru
+SUMMARY
+Final-year Computer Science student with hands-on experience building full stack web applications using the
+MERN stack. Completed a 3-month internship building customer-facing features end to end.
+EDUCATION
+B.E. Computer Science, RV College of Engineering, Bengaluru (2023-2027), CGPA: 8.7/10
+SKILLS
+JavaScript (ES6+), React.js, Redux, Node.js, Express.js, MongoDB, REST APIs, Git/GitHub, HTML5/CSS3,
+Tailwind CSS, basic AWS (EC2, S3), Jest
+EXPERIENCE
+Software Development Intern, Zenith Web Labs (Jun-Aug 2026)
+•
+Built 4 new React components for the customer dashboard, integrated with existing REST APIs
+•
+Developed Node.js/Express backend endpoints for a notifications module, tested with Jest
+•
+Worked in a 2-week sprint cycle using Jira and participated in daily standups
+PROJECTS
+Campus Marketplace (MERN Stack)
+•
+Built a full stack peer-to-peer marketplace app with React frontend and Node/Express/MongoDB backend
+•
+Implemented JWT-based authentication and role-based access control
+•
+Deployed on Render (backend) and Vercel (frontend); used GitHub Actions for CI
+Real-time Chat App
+•
+Built a chat application using Socket.io, React, and Express with MongoDB for message persistence
+CERTIFICATIONS
+Meta Front-End Developer (Coursera), MongoDB Basics (MongoDB University)

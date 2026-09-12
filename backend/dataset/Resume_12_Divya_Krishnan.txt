@@ -1,0 +1,23 @@
+Divya Krishnan
+divya.krishnan.cs@gmail.com | +91 98xxxxxx12 | github.com/divyak | Coimbatore
+SUMMARY
+Computer Science student with a strong personal project portfolio in the MERN stack, cloud deployment
+experience, and exposure to agile practices through a college developer club.
+EDUCATION
+B.E. Computer Science, PSG College of Technology (2023-2027), CGPA: 8.9/10
+SKILLS
+JavaScript, React.js, Node.js, Express.js, MongoDB, REST APIs, Git/GitHub, AWS (EC2, S3), Jest, Agile/Scrum,
+Tailwind CSS
+PROJECTS
+CivicConnect - Local Issue Reporting Platform
+•
+Full stack MERN application allowing citizens to report and track local civic issues
+•
+Deployed backend on AWS EC2 and frontend on Vercel; used GitHub Actions for CI/CD
+•
+Wrote Jest test suites for critical API endpoints
+Developer Club Sprint Projects
+•
+Led a 4-person team through 2-week agile sprints to build 3 internal club tools using MERN
+CERTIFICATIONS
+AWS Academy Cloud Foundations

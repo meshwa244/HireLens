@@ -1,0 +1,23 @@
+Pooja Shetty
+pooja.shetty.dev@gmail.com | +91 98xxxxxx18 | github.com/poojashetty | Udupi
+SUMMARY
+Web developer experienced with PHP/Laravel and jQuery-based frontends. Comfortable with REST APIs and
+relational databases but has not used React, Node.js, or MongoDB.
+EDUCATION
+B.E. Computer Science, Manipal Institute of Technology (2023-2027), CGPA: 8.2/10
+SKILLS
+PHP, Laravel, MySQL, jQuery, HTML5, CSS3, Bootstrap, REST APIs, Git, basic JavaScript
+EXPERIENCE
+Web Developer Intern, LocalCraft Studio (Dec 2025-Jan 2026)
+•
+Built and maintained Laravel-based admin dashboards for a small e-commerce client
+•
+Integrated payment gateway REST APIs and built jQuery-based dynamic forms
+PROJECTS
+College Club Management Portal
+•
+Laravel + MySQL application for managing club memberships and event registrations
+•
+jQuery/Bootstrap frontend with AJAX-based form submissions
+CERTIFICATIONS
+PHP with Laravel Framework (Udemy)

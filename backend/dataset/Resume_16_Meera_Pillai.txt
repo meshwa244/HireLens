@@ -1,0 +1,20 @@
+Meera Pillai
+meera.pillai.dev@gmail.com | +91 98xxxxxx16 | github.com/meerapillai | Thiruvananthapuram
+SUMMARY
+Backend developer specializing in Node.js and Express with strong database design skills. Has not worked with
+React, Angular, or Vue on the frontend.
+EDUCATION
+B.Tech Computer Science, College of Engineering Trivandrum (2023-2027), CGPA: 8.3/10
+SKILLS
+Node.js, Express.js, MongoDB, PostgreSQL, REST APIs, GraphQL (basic), Git, Postman, basic HTML/CSS
+PROJECTS
+Multi-tenant SaaS Backend
+•
+Designed a Node.js/Express REST API with PostgreSQL supporting multiple client organizations
+•
+Implemented JWT-based authentication and role-based authorization middleware
+Notes API with GraphQL
+•
+Built a GraphQL API on top of Express and MongoDB for a notes-taking service
+CERTIFICATIONS
+Node.js API Masterclass (Udemy)

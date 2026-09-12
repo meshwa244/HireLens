@@ -1,0 +1,16 @@
+Mohammed Faizan
+faizan.mech@gmail.com | +91 98xxxxxx07 | Bengaluru
+SUMMARY
+Mechanical Engineering student with basic programming exposure through core coursework. Interested in
+transitioning toward software roles but has limited web development experience.
+EDUCATION
+B.E. Mechanical Engineering, BMS College of Engineering (2023-2027), CGPA: 7.6/10
+SKILLS
+C programming, MATLAB, AutoCAD, basic Python, Excel, basic HTML
+PROJECTS
+Automated Attendance using RFID
+•
+Built a hardware-software prototype using Arduino and basic C for RFID-based attendance
+Simple Calculator (C)
+•
+Console-based calculator application written in C as part of coursework

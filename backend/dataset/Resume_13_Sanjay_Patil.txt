@@ -1,0 +1,20 @@
+Sanjay Patil
+sanjay.patil.dev@gmail.com | +91 98xxxxxx13 | github.com/sanjaypatil | Pune
+SUMMARY
+Backend-leaning developer skilled in Java and Spring Boot with working knowledge of plain JavaScript, HTML, and
+CSS. No experience with modern frontend frameworks like React or Angular.
+EDUCATION
+B.E. Information Technology, College of Engineering Pune (2023-2027), CGPA: 8.0/10
+SKILLS
+Java, Spring Boot, Spring Data JPA, MySQL, PostgreSQL, REST APIs, HTML5, CSS3, vanilla JavaScript, Git
+PROJECTS
+Online Bookstore
+•
+Spring Boot REST API backend with PostgreSQL, server-rendered pages using Thymeleaf
+•
+Basic JavaScript used for form validation and simple interactivity
+Employee Management System
+•
+Java Spring Boot application with MySQL, RESTful endpoints tested with Postman
+CERTIFICATIONS
+Spring Framework Fundamentals (Udemy)

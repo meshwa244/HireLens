@@ -1,0 +1,20 @@
+Vikram Nair
+vikram.nair.ml@gmail.com | +91 98xxxxxx06 | github.com/vikramnair | Kochi
+SUMMARY
+Data Science enthusiast focused on machine learning and data analysis. Strong in Python data libraries but has
+not built web applications or worked with JavaScript.
+EDUCATION
+B.Tech Computer Science (AI/ML specialization), Amrita Vishwa Vidyapeetham (2023-2027), CGPA: 8.8/10
+SKILLS
+Python, Pandas, NumPy, Scikit-learn, TensorFlow, Matplotlib, SQL, Jupyter Notebook, basic Git
+PROJECTS
+Student Placement Prediction Model
+•
+Built a classification model using Scikit-learn to predict placement outcomes from academic data
+•
+Performed EDA and feature engineering using Pandas and Matplotlib
+Sentiment Analysis on Twitter Data
+•
+Used NLTK and Scikit-learn to classify tweet sentiment; no web deployment
+CERTIFICATIONS
+Machine Learning by Andrew Ng (Coursera)

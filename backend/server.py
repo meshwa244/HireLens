@@ -330,6 +330,31 @@ async def job_detail(job_id: str) -> dict[str, Any]:
     return job
 
 
+def sectioned_skill_split(text: str) -> tuple[list[str], list[str]]:
+    """Split a JD into required vs preferred skills using explicit section headers."""
+    segments = re.split(r"(?im)^\s*(must[- ]have(?:\s+skills)?|good[- ]to[- ]have(?:\s+skills)?|nice[- ]to[- ]have(?:\s+skills)?|preferred\s+(?:qualifications|skills)|requirements|key responsibilities|responsibilities|soft skills|about the role)\s*$", text)
+    required_text = preferred_text = ""
+    current = "neutral"
+    for segment in segments:
+        label = segment.lower().strip()
+        if re.fullmatch(r"(?i)(must[- ]have(?:\s+skills)?|requirements|key responsibilities|responsibilities)", label):
+            current = "required"
+            continue
+        if re.fullmatch(r"(?i)(good[- ]to[- ]have(?:\s+skills)?|nice[- ]to[- ]have|preferred(?:\s+qualifications)?)", label):
+            current = "preferred"
+            continue
+        if re.fullmatch(r"(?i)(soft skills|about the role)", label):
+            current = "neutral"
+            continue
+        if current == "required":
+            required_text += " " + segment
+        elif current == "preferred":
+            preferred_text += " " + segment
+    required = extract_known_skills(required_text)
+    preferred = [skill for skill in extract_known_skills(preferred_text) if skill not in required]
+    return required, preferred
+
+
 @api_router.post("/jobs/{job_id}/jd")
 async def upload_jd(job_id: str, text: str = Form(...)) -> dict[str, Any]:
     job = await get_job(job_id)
@@ -347,10 +372,14 @@ async def upload_jd(job_id: str, text: str = Form(...)) -> dict[str, Any]:
             preferred = [str(item) for item in data.get("preferred_skills", [])]
         except json.JSONDecodeError:
             pass
+    # Section-aware extraction (MUST-HAVE vs GOOD-TO-HAVE) grounds or repairs
+    # the LLM output — LLMs routinely drop skills from long JDs.
+    section_required, section_preferred = sectioned_skill_split(text)
+    required = list(dict.fromkeys([canonical_skill(skill) for skill in required if skill.strip()] + [skill for skill in section_required if skill not in {canonical_skill(s) for s in required}]))[:14]
+    taken = set(required)
+    preferred = [skill for skill in dict.fromkeys([canonical_skill(skill) for skill in preferred if skill.strip()] + section_preferred) if skill not in taken][:8]
     if not required:
-        required = extract_known_skills(text)
-    required = list(dict.fromkeys(canonical_skill(skill) for skill in required if skill.strip()))[:14]
-    preferred = [skill for skill in dict.fromkeys(canonical_skill(skill) for skill in preferred if skill.strip()) if skill not in required][:8]
+        required = extract_known_skills(text)[:14]
     job["description"] = text
     requirements = [
         {"requirement_id": f"req-{index + 1}", "text": f"{skill} experience", "category": "REQUIRED_SKILL", "required_or_preferred": "required", "normalized_skill": skill, "weight": 10}
@@ -523,6 +552,21 @@ async def job_insights(job_id: str) -> dict[str, Any]:
     cloud_hits = cloud_providers.intersection(item.get("normalized_skill", "") for item in required_items)
     if len(cloud_hits) >= 2:
         insights.append({"severity": "warning", "title": "Multiple cloud providers mandatory", "body": f"The JD requires {', '.join(sorted(cloud_hits))}. Cloud skills transfer well — consider marking one as preferred."})
+    tone_hits = re.findall(r"(?i)\b(rockstar|ninja|guru|young and|native speaker|native english|he will|she will|guys)\b", description)
+    if tone_hits:
+        insights.append({"severity": "warning", "title": "Potentially exclusionary language", "body": f"Phrases like \"{tone_hits[0]}\" can signal bias and may deter qualified candidates. Consider neutral, skill-focused wording."})
+    llm_flags = await llm_text(
+        "You review job descriptions for narrow or biased phrasing. Return strict JSON only: {\"flags\": [{\"title\": str, \"body\": str}]} with at most 2 flags, only for genuine issues (overly narrow technology stacks, unnecessary mandatory requirements, exact-year or degree rigidity, gendered or exclusionary wording). Return {\"flags\": []} if the JD is well written. Never make legal claims.",
+        f"Job description:\n{description}",
+        f"insights-{job_id}",
+    )
+    if llm_flags:
+        try:
+            parsed = json.loads(llm_flags.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip())
+            for flag in parsed.get("flags", [])[:2]:
+                insights.append({"severity": "info", "title": f"AI review: {flag.get('title', 'Wording note')}", "body": str(flag.get("body", ""))})
+        except json.JSONDecodeError:
+            pass
     if not insights:
         insights.append({"severity": "success", "title": "Balanced requirement set", "body": "No obvious narrow wording patterns were detected by the configured checks."})
     return {"job_id": job_id, "insights": insights, "disclaimer": "These are review prompts, not legal conclusions."}

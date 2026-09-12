@@ -1,0 +1,20 @@
+Sneha Reddy
+sneha.reddy.dev@gmail.com | +91 98xxxxxx04 | github.com/snehareddy | Hyderabad
+SUMMARY
+Frontend developer passionate about building clean, accessible user interfaces with React. Limited backend
+experience; has mostly consumed third-party or mock APIs in projects.
+EDUCATION
+B.Tech Computer Science, VIT Vellore (2023-2027), CGPA: 8.5/10
+SKILLS
+React.js, JavaScript, HTML5, CSS3, Tailwind CSS, Figma, Git, basic REST API consumption (Axios, fetch)
+PROJECTS
+Portfolio Builder for Students
+•
+Built a React app that generates shareable portfolio pages from a form-based input
+•
+Used Firebase for basic auth and Firestore for data storage (no custom backend)
+Weather Dashboard
+•
+React app consuming a public weather REST API, styled with Tailwind CSS
+CERTIFICATIONS
+React - The Complete Guide (Udemy)
