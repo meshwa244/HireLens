@@ -34,3 +34,4 @@ Build HIRELENS, a hackathon-ready AI talent intelligence platform. Primary focus
 
 ## Later additions (same day)
 - Live engine weight tuning on Technical View: 4 presets (Balanced / Keyword-heavy / Semantic-heavy / Evidence-heavy) POST /api/jobs/{id}/weights, validated 0-1 summing to 1, full re-rank on tap; candidate breakdown maxes follow active weights.
+- **Student Mode (beta)**: `/student` screen + GET /api/student/gap/{candidate_id} — pick any of the 18 profiles → estimated fit score, strong/moderate/missing skills, Learn→Build→Prove→Apply roadmap per missing skill (deterministic templates), proof-of-skill (claimed vs demonstrated per skill). Entry card on Overview. Disclaimer: "estimated alignment, not a hiring prediction".

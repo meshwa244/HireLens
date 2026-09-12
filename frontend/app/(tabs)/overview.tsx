@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 
 import { api } from "@/src/api";
@@ -8,7 +8,6 @@ import { Icon, MetricCard, Pill, PrimaryButton, ScreenHeader, SectionTitle, useU
 import { useActiveJob, useOverview, useScreening } from "@/src/hooks";
 import { clearSession, getStoredUser } from "@/src/session";
 import { useTheme } from "@/src/theme";
-import { useEffect } from "react";
 
 export default function OverviewTab() {
   const styles = useUiStyles();
@@ -118,6 +117,17 @@ export default function OverviewTab() {
             <Text style={styles.philosophyText}>Projects, internships and experience carry more weight than a crowded skills list.</Text>
           </View>
         </View>
+
+        <Pressable testID="student-mode-entry" onPress={() => router.push("/student")} style={({ pressed }) => [styles.philosophyRow, pressed && styles.buttonPressed]}>
+          <View style={[styles.philosophyIcon, { backgroundColor: colors.surfaceTertiary }]}>
+            <Icon name="school-outline" color={colors.info} size={20} />
+          </View>
+          <View style={styles.philosophyCopy}>
+            <Text style={styles.philosophyTitle}>Student Mode · beta</Text>
+            <Text style={styles.philosophyText}>See your skill gap and a Learn → Build → Prove → Apply roadmap for this role.</Text>
+          </View>
+          <Icon name="arrow-right" color={colors.info} size={18} />
+        </Pressable>
         <Text style={styles.integrityNote}>Tap your avatar to sign out of the workspace.</Text>
       </ScrollView>
     </View>

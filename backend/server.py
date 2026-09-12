@@ -586,6 +586,67 @@ async def recruiter_ai(payload: RecruiterQuestion) -> dict[str, Any]:
     return {"answer": response or fallback, "grounded": bool(response), "sources": ["deterministic screening run", "candidate requirement matches"], "screening_id": screening["screening_id"]}
 
 
+ROADMAP_TEMPLATES: dict[str, list[str]] = {
+    "Docker": ["Learn container fundamentals (images, containers, volumes)", "Dockerize one of your existing projects end-to-end", "Push the Dockerfile and compose setup to GitHub", "Add the deployment evidence to your resume"],
+    "REST API": ["Learn HTTP methods, status codes and API design basics", "Build a small CRUD API with Node.js/Express or FastAPI", "Document the endpoints and publish on GitHub", "Reference the project as API evidence on your resume"],
+    "React": ["Learn components, props, state and hooks", "Rebuild a UI from one of your existing projects in React", "Deploy it live and link it from your GitHub", "Add the deployed project to your resume"],
+    "Node.js": ["Learn the Node.js runtime, npm and async patterns", "Build a small backend service with Express", "Connect it to a database and push to GitHub", "Cite the service as backend evidence on your resume"],
+    "SQL": ["Practice SELECT, JOIN and aggregation queries", "Model a small schema for one of your projects", "Show the schema and queries in a GitHub repo", "Add the data work to your resume projects section"],
+    "Git": ["Learn branching, pull requests and code review flow", "Move your existing projects into clean GitHub repos", "Contribute a small PR to an open project", "Link your GitHub prominently on your resume"],
+    "TypeScript": ["Learn types, interfaces and generics", "Convert one JavaScript project to TypeScript", "Push the typed codebase to GitHub", "Note TypeScript in your resume skills with the project link"],
+}
+
+
+def roadmap_for(skill: str) -> list[str]:
+    return ROADMAP_TEMPLATES.get(skill, [
+        f"Learn {skill} fundamentals through a structured course",
+        f"Build a small project that uses {skill} in a real workflow",
+        "Publish the project on GitHub with a clear README",
+        "Update your resume so the evidence is explicit",
+    ])
+
+
+@api_router.get("/student/gap/{candidate_id}")
+async def student_gap(candidate_id: str) -> dict[str, Any]:
+    candidate = await db.candidates.find_one({"candidate_id": candidate_id}, {"_id": 0})
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    screening = await recompute_screening(candidate["job_id"], persist=False)
+    ranking = next((item for item in screening["rankings"] if item["candidate_id"] == candidate_id), None)
+    if not ranking:
+        raise HTTPException(status_code=404, detail="Candidate ranking not found")
+    strong, moderate = [], []
+    for match in ranking["matches"]:
+        if match["match_type"] == "missing":
+            continue
+        entry = {"requirement": match["requirement"], "skill": match["requirement"].replace(" experience", "").replace(" familiarity", ""), "evidence_score": match["evidence_score"], "match_type": match["match_type"]}
+        if match["evidence_score"] >= 0.6:
+            strong.append(entry)
+        else:
+            moderate.append(entry)
+    missing_required = [m for m in ranking["matches"] if m["match_type"] == "missing" and m["required_or_preferred"] == "required"]
+    missing_preferred = [m for m in ranking["matches"] if m["match_type"] == "missing" and m["required_or_preferred"] == "preferred"]
+    demonstrated = set(ranking["demonstrated_skills"])
+    proof = [
+        {"skill": skill, "claimed": True, "demonstrated": skill in demonstrated, "proof_score": 100 if skill in demonstrated else 40}
+        for skill in ranking["claimed_skills"][:10]
+    ]
+    return {
+        "candidate": {"candidate_id": candidate_id, "name": candidate["name"]},
+        "job_title": (await get_job(candidate["job_id"]))["title"],
+        "fit_score": ranking["final_score"],
+        "rank": ranking["rank"],
+        "pool_size": len(screening["rankings"]),
+        "strong": strong,
+        "moderate": moderate,
+        "missing_required": [m["requirement"] for m in missing_required],
+        "missing_preferred": [m["requirement"] for m in missing_preferred],
+        "roadmap": [{"skill": m["requirement"].replace(" experience", ""), "steps": roadmap_for(m["requirement"].replace(" experience", "").replace(" familiarity", ""))} for m in (missing_required + missing_preferred)[:3]],
+        "proof_of_skill": proof,
+        "disclaimer": "Estimated profile alignment from the same deterministic engine — not a hiring prediction.",
+    }
+
+
 @api_router.get("/overview")
 async def overview() -> dict[str, Any]:
     jobs = await db.jobs.find({}, {"_id": 0}).to_list(100)

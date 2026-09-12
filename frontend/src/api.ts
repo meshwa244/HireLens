@@ -142,4 +142,20 @@ export const api = {
   },
   exportUrl: (jobId: string) => `${baseUrl}/api/screenings/screening-${jobId}/export.csv`,
   setWeights: (jobId: string, weights: { keyword: number; semantic: number; evidence: number; coverage: number }) => request<{ weights: Record<string, number>; top_candidates: { rank: number; name: string; final_score: number }[] }>(`/jobs/${jobId}/weights`, { method: "POST", body: JSON.stringify(weights) }),
+  studentGap: (candidateId: string) => request<StudentGap>(`/student/gap/${candidateId}`),
+};
+
+export type StudentGap = {
+  candidate: { candidate_id: string; name: string };
+  job_title: string;
+  fit_score: number;
+  rank: number;
+  pool_size: number;
+  strong: { requirement: string; skill: string; evidence_score: number; match_type: string }[];
+  moderate: { requirement: string; skill: string; evidence_score: number; match_type: string }[];
+  missing_required: string[];
+  missing_preferred: string[];
+  roadmap: { skill: string; steps: string[] }[];
+  proof_of_skill: { skill: string; claimed: boolean; demonstrated: boolean; proof_score: number }[];
+  disclaimer: string;
 };
